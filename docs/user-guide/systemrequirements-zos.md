@@ -15,7 +15,7 @@ All Zowe server components can be installed on a z/OS environment, while some ca
   - [ZWEADMIN](#zweadmin)
   - [zowe_user](#zowe_user)
 - [Network requirements](#network-requirements)
-- [Zowe Docker requirements](#zowe-docker-requirements)
+- [Zowe Containers requirements](#zowe-containers-requirements)
 - [Zowe Desktop requirements (client PC)](#zowe-desktop-requirements-client-pc)
 - [Feature requirements](#feature-requirements)
   - [Multi-Factor Authentication MFA](#multi-factor-authentication-mfa)
@@ -79,9 +79,12 @@ This is a started task ID for `ZWESLSTC`.
 
 The task starts a USS environment using `BPXBATSL` that executes the core Zowe Desktop (ZLUX) node.js server, the Java API Mediation Layer, and the Z Secure Services C component.  To work with USS, the user ID `ZWESVUSR` must have a valid OMVS segment.  
 
+
+
 | Class  | ID     | Access |  Reason |
 |--------|--------|--------|---------|
-| CSFSERV | `CSFRNGL` | READ | To generate symmetric keys using ICSF that is used by [Zowe Desktop cookies](./configure-zos-system.md#configure-an-icsf-cryptographic-services-environment) |
+
+| CSFSERV | `Multiple` | READ | To generate symmetric keys using ICSF that is used by [Zowe Desktop cookies](./configure-zos-system.md#configure-an-icsf-cryptographic-services-environment). The list of IDs to enable will include `CSF1TRD` , `CSF1TRC` , `CSF1SKE` , `CSF1SKD`. The full list of IDs is described in the z/OS Cryptographic Services user guide for your z/OS release level: [2.2](https://www.ibm.com/docs/en/zos/2.2.0?topic=ssl-racf-csfserv-resource-requirements), [2.3](https://www.ibm.com/docs/en/zos/2.3.0?topic=ssl-racf-csfserv-resource-requirements), [2.4](https://www.ibm.com/docs/en/zos/2.4.0?topic=ssl-racf-csfserv-resource-requirements) and [2.5](https://www.ibm.com/docs/en/zos/2.5.0?topic=ssl-racf-csfserv-resource-requirements). |
 | FACILITY | `ZWES.IS` | READ | To allow Zowe ZWESVSTC processes to access the Zowe ZIS cross memory server |
 | FACILITY | `BPX.SERVER` + `BPX.DAEMON` | UPDATE | To allow the Zowe Desktop ZLUX server to run code on behalf of the API requester's TSO user ID. For more information, see [Security Environment Switching](./configure-zos-system.md#configure-security-environment-switching). |
 | FACILITY | `IRR.RUSERMAP` | READ | To allow Zowe to [map an X.509 client certificate to a z/OS identity](./configure-zos-system.md#configure-main-zowe-server-to-use-identity-mapping) | 
@@ -121,24 +124,9 @@ The following ports are required for Zowe. These are default values. You can cha
 
 
 
-## Zowe Docker requirements
+## Zowe Containers requirements
 
-<Badge text="Technical Preview"/> The Zowe Docker build is a technical preview.
-
-Docker is a technology for delivering a set of software and all its prerequisites and run them in an isolated manner to reduce installation steps and to eliminate troubleshooting environmental differences.
-Docker can run on many operating systems, but currently the Zowe Docker image is for x86 Linux (Intel, AMD) and zLinux ("s390x"). Support for platforms such as zCX, Windows, and more will be added over time.
-
-To get Docker for Linux, you should check your Linux software repository. Whether using Ubuntu, Red Hat, SuSE, and many other types of Linux, you can install Docker the same way you install other software on Linux through the package manager.
-
-Once you have Docker, the Zowe Docker image has the following requirements
-
-- 4 GB free RAM, 8 GB recommended
-- 4 GB free disk space
-- Network access to the z/OS host. The Linux host must be able to communicate with the z/OS host.
-
-When using Docker the USS components of Zowe will run off z/OS in the Linux container, however a z/OS installation of Zowe is still required for the ZSS and cross memory server.  
-
-**Note:** The subsections of z/OS requirements such as for API Mediation Layer, Web Explorers, and Application Framework are not required because they are included in the Docker install.
+Zowe (server) containers are available for download as an alternative to running Zowe servers on z/OS through the Zowe convenience and SMP/E builds Check [Zowe Containers Prerequisites](./k8s-prereqs.md) page for more details.
 
 ## Zowe Desktop requirements (client PC)
 
