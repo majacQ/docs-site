@@ -15,7 +15,7 @@ All Zowe server components can be installed on a z/OS environment, while some ca
   - [ZWEADMIN](#zweadmin)
   - [zowe_user](#zowe_user)
 - [Network requirements](#network-requirements)
-- [Zowe Docker requirements](#zowe-docker-requirements)
+- [Zowe Containers requirements](#zowe-containers-requirements)
 - [Zowe Desktop requirements (client PC)](#zowe-desktop-requirements-client-pc)
 - [Feature requirements](#feature-requirements)
   - [Multi-Factor Authentication MFA](#multi-factor-authentication-mfa)
@@ -51,7 +51,7 @@ Be sure your z/OS system meets the following prerequisites.
 
 ### Java 
 
-- IBM SDK for Java Technology Edition V8 or later
+- IBM SDK for Java Technology Edition V8
 
 ### z/OSMF (Optional) 
 
@@ -75,7 +75,7 @@ Specific user IDs with sufficient permissions are required to run or access Zowe
 
 ### ZWESVUSR
 
-This is a started task ID used to run the PROCLIB `ZWESVSTC`.  
+This is a started task ID for `ZWESLSTC`.  
 
 The task starts a USS environment using `BPXBATSL` that executes the core Zowe Desktop (ZLUX) node.js server, the Java API Mediation Layer, and the Z Secure Services C component.  To work with USS, the user ID `ZWESVUSR` must have a valid OMVS segment.  
 
@@ -103,40 +103,27 @@ If z/OSMF is used for authentication and serving REST APIs for Zowe CLI and Zowe
 
 ## Network requirements
 
-The following ports are required for Zowe. These are default values. You can change the values by updating variable values in the `instance.env` file. For more information, see [Configuring the Zowe instance directory](configure-instance-directory.md#updating-the-instance-env-configuration-file).
+The following ports are required for Zowe. These are default values. You can change the values by updating variable values in the `zowe.yaml` file. 
 
-| Port number | Variable name | Purpose |
+| Port number | zowe.yaml variable name | Purpose |
 |------|------|------|
-| 7552 | _CATALOG_PORT_ | Used to view API swagger / openAPI specifications for registered API services in the API Catalog. 
-| 7553 | _DISCOVERY_PORT_ | Discovery server port which dynamic API services can issue APIs to register or unregister themselves.
-| 7554 | _GATEWAY_PORT_ | The northbound edge of the API Gateway used to accept client requests before routing them to registered API services.  This port must be exposed outside the z/OS network so clients (web browsers, VS Code, processes running the Zowe CLI) can reach the gateway.
-| 7555 | _ZWE_CACHING_SERVICE_PORT_ | Port of the caching service that is used to share state between different Zowe instances in a high availability topology.
-| 8545 | _JOBS_API_PORT_ | Port of the service that provides REST APIs to z/OS jobs used by the JES Explorer.
-| 8546 | _JES_EXPLORER_UI_PORT_ | Port of the JES Explorer GUI for viewing and working with jobs in the Zowe Desktop.
-| 8547 | _FILES_API_PORT_ | Port of the service that provides REST APIs to MVS and USS file systems.
-| 8548 | _MVS_EXPLORER_UI_PORT_ | Port of the MVS Explorer GUI for working with data sets in the Zowe Desktop.
-| 8550 | _USS_EXPLORER_UI_PORT_ | Port of the USS Explorer GUI for working with USS in the Zowe Desktop.
-| 8544 | _ZOWE_ZLUX_SERVER_HTTPS_PORT_ | The Zowe Desktop (also known as ZLUX) port used to log in through web browsers.
-| 8542 | _ZOWE_ZSS_SERVER_PORT_ | Z Secure Services (ZSS) provides REST API services to ZLUX, used by the File Editor application and other ZLUX applications in the Zowe Desktop.
+| 7552 | zowe.components.api-catalog.port | Used to view API swagger / openAPI specifications for registered API services in the API Catalog. 
+| 7553 | zowe.components.api-catalog.port | Discovery server port which dynamic API services can issue APIs to register or unregister themselves.
+| 7554 | zowe.components.gateway.port | The northbound edge of the API Gateway used to accept client requests before routing them to registered API services.  This port must be exposed outside the z/OS network so clients (web browsers, VS Code, processes running the Zowe CLI) can reach the gateway.
+| 7555 | zowe.components.caching-service.port | Port of the caching service that is used to share state between different Zowe instances in a high availability topology.
+| 7556 | zowe.components.app-server.port | The Zowe Desktop (also known as ZLUX) port used to log in through web browsers.
+| 7557 | zowe.components.zss.port | Z Secure Services (ZSS) provides REST API services to ZLUX, used by the File Editor application and other ZLUX applications in the Zowe Desktop.
+| 7558 | zowe.components.jobs-api.port | Port of the service that provides REST APIs to z/OS jobs used by the JES Explorer.
+| 7559 | zowe.components.files-api.port | Port of the service that provides REST APIs to MVS and USS file systems.
+|  | zowe.components.explorer-jes | Port of the JES Explorer GUI for viewing and working with jobs in the Zowe Desktop.
+|  | zowe.components.explorer-mvs | Port of the MVS Explorer GUI for working with data sets in the Zowe Desktop.
+|  | zowe.components.explorer-uss | Port of the USS Explorer GUI for working with USS in the Zowe Desktop.
 
-## Zowe Docker requirements
 
-<Badge text="Technical Preview"/> The Zowe Docker build is a technical preview.
 
-Docker is a technology for delivering a set of software and all its prerequisites and run them in an isolated manner to reduce installation steps and to eliminate troubleshooting environmental differences.
-Docker can run on many operating systems, but currently the Zowe Docker image is for x86 Linux (Intel, AMD) and zLinux ("s390x"). Support for platforms such as zCX, Windows, and more will be added over time.
+## Zowe Containers requirements
 
-To get Docker for Linux, you should check your Linux software repository. Whether using Ubuntu, Red Hat, SuSE, and many other types of Linux, you can install Docker the same way you install other software on Linux through the package manager.
-
-Once you have Docker, the Zowe Docker image has the following requirements
-
-- 4 GB free RAM, 8 GB recommended
-- 4 GB free disk space
-- Network access to the z/OS host. The Linux host must be able to communicate with the z/OS host.
-
-When using Docker the USS components of Zowe will run off z/OS in the Linux container, however a z/OS installation of Zowe is still required for the ZSS and cross memory server.  
-
-**Note:** The subsections of z/OS requirements such as for API Mediation Layer, Web Explorers, and Application Framework are not required because they are included in the Docker install.
+Zowe (server) containers are available for download as an alternative to running Zowe servers on z/OS through the Zowe convenience and SMP/E builds Check [Zowe Containers Prerequisites](./k8s-prereqs.md) page for more details.
 
 ## Zowe Desktop requirements (client PC)
 
@@ -172,11 +159,13 @@ Multi-factor authentication is provided by third-party products which Zowe is co
 
 For information on using MFA in Zowe, see [Multi-Factor Authentication](mvd-configuration.md#multi-factor-authentication-configuration).
 
+**Note:** MFA must work with Single sign-on (SSO). Make sure that [SSO](#single-sign-on-sso) is configured before you use MFA in Zowe.
+
 ### Single Sign-On (SSO)
 
-Zowe has an SSO scheme with the goal that each time you use use multiple Zowe components you should only be prompted to login once.
+Zowe has an SSO scheme with the goal that each time you use multiple Zowe components you should only be prompted to login once.
 
-Requirements: 
+Requirements:
 
 - IBM z/OS Management Facility (z/OSMF)
 
@@ -191,3 +180,5 @@ Discovery service | 256MB
 API Catalog | 512MB
 Metrics service | 512MB
 Caching service | 512MB
+
+- (Optional, recommended) PKCS#11 token setup is required when using ZSS, the Desktop, and Application Framework with SSO. See [Creating a PKCS#11 Token](configure-certificates-keystore.md#using-web-tokens-for-sso-on-zlux-and-zss) for more information.

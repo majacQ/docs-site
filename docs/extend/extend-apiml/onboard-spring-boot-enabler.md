@@ -25,6 +25,8 @@ The following steps outline the overall process to onboard a REST service with t
 3. [Configuring your Spring Boot based service to onboard with API ML](#configuring-your-spring-boot-based-service-to-onboard-with-api-ml)
 
     * [Sample API ML Onboarding Configuration](#sample-api-ml-onboarding-configuration)
+    * [Authentication properties](#authentication-properties)
+    * [API ML Onboarding Configuration Sample](#api-ml-onboarding-configuration-sample)
     * [SAF Keyring configuration](#saf-keyring-configuration)
     * [Custom Metadata](#custom-metadata)
     * [Api Mediation Layer specific metadata](#api-mediation-layer-specific-metadata)
@@ -36,7 +38,7 @@ The following steps outline the overall process to onboard a REST service with t
     
 5. [Adding API documentation](#adding-api-documentation)
 
-6. (Optional) [Validating your API service discoverability](#validating-the-discoverability-of-your-api-service-by-the-discovery-service)
+6. (Optional) [Validating the discoverability of your API service by the Discovery Service](#validating-the-discoverability-of-your-api-service-by-the-discovery-service)
 
 7. (Optional) [Troubleshooting](#troubleshooting)
     * [Log messages during registration problems](#log-messages-during-registration-problems)
@@ -310,6 +312,9 @@ A property notation provided in the format `-Dproperty.key=PROPERTY_VALUE` can b
 
 **Note**: System properties provided with `-D` notation on the command line will not replace properties defined
 in any of the YAML configuration files.
+
+### Authentication properties
+These parameters are not required. If a parameter is not specified, a default value is used. See [Authentication Parameters for Onboarding REST API Services](../extend-apiml/api-mediation-security.md#authentication-parameters) for more details.
 
 ### API ML Onboarding Configuration Sample
 
