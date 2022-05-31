@@ -47,11 +47,28 @@
 * **customMetadata.apiml.corsEnabled**
     
     When this parameter is set to `true`, CORS handling by the Gateway is enabled on the service level for all service routes. 
-    For more information, see [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
+    For more information, refer to enabling CORS with Custom Metadata on the Gateway: [Advanced Gateway features configuration](../../user-guide/api-mediation/api-gateway-configuration.md).
+    Additional information can be found in this article about [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
     
     **Note:** If you use the Spring enabler, use the following parameter name:
     
     `apiml.service.customMetadata.apiml.corsEnabled`
+
+* **customMetadata.apiml.gatewayAuthEndpoint**
+
+  Specifies the Gateway authentication endpoint used by the ZAAS Client configuration. The default value is `/api/v1/gateway/auth`. For more information about ZAAS Client, see [ZAAS Client](api-mediation-security.md#zaas-client).
+
+  **Note:** If you use the Spring enabler, use the following parameter name:
+
+  `apiml.service.customMetadata.apiml.gatewayAuthEndpoint`
+
+* **customMetadata.apiml.gatewayPort**
+
+  Specifies the Gateway port used by the ZAAS Client configuration. The default value is `10010`. For more information about ZAAS Client, see [ZAAS Client](api-mediation-security.md#zaas-client).
+
+  **Note:** If you use the Spring enabler, use the following parameter name:
+
+  `apiml.service.customMetadata.apiml.gatewayPort`
   
 * **customMetadata.apiml.corsAllowedOrigins**
 
@@ -60,6 +77,8 @@
     **Note:** If you use the Spring enabler, use the following parameter name:
 
     `apiml.service.customMetadata.apiml.corsAllowedOrigins`
+
+    For more information, refer to enabling CORS with Custom Metadata on the Gateway: [Advanced Gateway features configuration](../../user-guide/api-mediation/api-gateway-configuration.md).
   
  * **customMetadata.apiml.lb.type**
    
