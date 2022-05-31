@@ -45,11 +45,77 @@ After you register the workflow definition file, perform the following steps to 
 
    Execute the `zwe install` command with the previously stored zowe.yaml file as a parameter.
 
+   If you receive an error message (such as RC higher than 0), ensure that you edit incorrect input values or system setup before you re-run the `zwe install` command. To overwrite changed output, edit the step by adding the `--allow-overwritten` tag to the install command.
+
+   **Example: Command that re-runs the installation**
+
+   ```
+   zwe install -c '/path/zowe.yaml' --allow-overwritten
+   ```
+
 4. **Run Zowe init**
 
     Execute the `zwe init` command with the previously stored zowe.yaml file as a parameter.
 
+    **Note**: Messages and error codes from the subsequent JOBS command are not forwarded back to z/OSMF.
+
+    If you receive an error message (such as RC higher than 0) and want to find out the error cause, enter ISPF and find corresponding subsequent JOBLOG.
+
+    If you execute the init step again, either manually delete failed artifacts that are created from previous init steps, or edit the step by adding `--allow-overwritten` tag to the init command.
+
+    **Example: Command that re-runs init**
+
+    ```
+    zwe init -c '/path/zowe.yaml' --allow-overwritten
+    ```
+
 After you execute each step, the step is marked as Complete. After completing the workflow execution, you can view the Zowe started task.
+
+## Execute the configuration workflow
+
+You can use the following methods to execute the configuration workflow:
+
+- Directly from a PSWI during deployment
+- From a deployed software instance (SI)
+- From the Workflows tab in the z/OSMF web UI
+
+### TODO Execute workflow from PSWI
+
+<!-- TODO `Workflow load` - what you had there before the change. It was unclear what exactly ""Workflow load"" means. I changed it to `Execute workflow` and also modified the heading a bit -->
+
+In the PSWI deployment phase, you are presented with the checklist that helps guide you during the deployment process.
+
+<img src="../images/zosmf/perform-workflows.png" alt="Workflow ZWECRECR" style="height: 300px; width:500px;"/> <br />
+
+The **perform workflows** step enables you to run either all attached workflows or just the mandatory one — the post-deployment workflow for mounting.
+
+### TODO Execute workflow from software instance
+
+<!-- TODO Same as above -->
+
+Software instance is created after PSWI deployment is complete. Execute a workflow from an SI.
+
+**Follow these steps**:
+
+1. Log in to z/OSMF.
+2. Select the **Software Management** panel.
+3. In the displayed table, select **Software Instances**.
+4. Select the checkbox next to the **Software Instance Name** column for the instance you want to execute the workflow against.
+5. Select the **Perform Workflows** option from the **Actions** menu.
+
+   The **Software Management Software Instances Perform Workflows** dialog opens.
+
+6. Select the **Create Workflow** option from the **Actions** menu.
+7. In the displayed table, click on the name of the workflow you want to execute.
+8. Click **OK**.
+
+    The **Workflows** tab with the previously selected workflow opens.
+
+9. TODO Continue with displayed steps same way as you would do from manual workflow registration.
+
+<!-- TODO I'm not sure this adds any value to the reader. We should either be more specific or discard this step. -->
+
+You have successfully executed a workflow from a software instance.
 
 ## Register and execute workflow in the z/OSMF web interface
 
