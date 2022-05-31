@@ -1477,6 +1477,8 @@ The following error message codes may appear on logs or API responses. Use the f
 
   Configure your client to provide valid authentication.
 
+  <<<<<<< apiml/pr614dd02f5a9e0476dcb91cfa3657855008e64d6fff9e0cf34f8b8ab53f1b26a9/changed_errors
+  =======
 ### ZWEAG169E
 
   The 'apiml.authentication.applid' parameter is not specified for a service.
@@ -1489,6 +1491,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   Provide the 'apiml.authentication.applid' parameter.
 
+  >>>>>>> docs-staging
 ## API Catalog messages
 
 ### ZWEAC100W
