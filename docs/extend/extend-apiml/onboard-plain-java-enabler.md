@@ -48,19 +48,17 @@ The following steps outline the overall process to onboard a REST service with t
 
 4. [Registering your service with API ML](#registering-your-service-with-api-ml)
 
-5. [Adding API documentation](#adding-api-documentation)
+5. (Optional) [Validating the discoverability of your API service by the Discovery Service](#validating-the-discoverability-of-your-api-service-by-the-discovery-service)
 
-6. (Optional) [Validating your API service discoverability](#validating-the-discoverability-of-your-api-service-by-the-discovery-service)
-
-7. (Optional) [Troubleshooting](#troubleshooting)
+6. (Optional) [Troubleshooting](#troubleshooting)
     * [Log messages during registration problems](#log-messages-during-registration-problems)
 
 ## Prerequisites
 
 Ensure that the prerequisites from the [Onboarding Overview](onboard-overview.md) are met.
 
-* The REST API service to onboard is written in Java.
-* The service is enabled to communicate with API ML Discovery Service over a TLS v1.2 secured connection.
+* The REST API service to onboard is written in Java
+* The service is enabled to communicate with API ML Discovery Service over a TLS v1.2 secured connection
 
 **Notes:**
 
@@ -68,11 +66,13 @@ Ensure that the prerequisites from the [Onboarding Overview](onboard-overview.md
 
 * Following this guide enables REST services to be deployed on a z/OS environment. Deployment to a z/OS environment, however, is not required. As such, you can first develop on a local machine before you deploy on z/OS.
 
+* The API Mediation Layer provides the sample application using the Plain Java Enabler in the [api-layer repository](https://github.com/zowe/api-layer/tree/master/onboarding-enabler-java-sample-app)
+
 ## Configuring your project
 
-Use either _Gradle_ or _Maven_ build automation systems to configure the project with service to be onboarded. Use the appropriate configuration procedure that corresponds to your build automation system.
+Use either _Gradle_ or _Maven_ build automation systems to configure the project with the service to be onboarded. Use the appropriate configuration procedure that corresponds to your build automation system.
 
-**Note:** You can use either the Zowe Artifactory or an artifactory of your choice. However, if you decide to build the API ML from source, you are required to publish the enabler artifact to your artifactory. Publish the enabler artifact by using the _Gradle_ tasks provided in the source code.
+**Note:** You can use either the Zowe Artifactory or an artifactory of your choice. If you decide to build the API ML from source, you are required to publish the enabler artifact to your artifactory. Publish the enabler artifact by using the _Gradle_ tasks provided in the source code.
 
 ### Gradle build automation system
 Use the following procedure to use _Gradle_ as your build automation system.
@@ -105,21 +105,21 @@ Use the following procedure to use _Gradle_ as your build automation system.
     implementation "org.zowe.apiml.sdk:onboarding-enabler-java:$zoweApimlVersion"
     implementation "org.zowe.apiml.sdk:common-service-core:$zoweApimlVersion"
     ```
-    **Note:** The published artifact from the Zowe Artifactory also contains the enabler dependencies from other software packages. If you are using an artifactory other than Zowe, add also the following dependencies in your service `build.gradle` script:
+    The published artifact from the Zowe Artifactory also contains the enabler dependencies from other software packages. If you are using an artifactory other than Zowe, add also the following dependencies in your service `build.gradle` script:
 
     ```gradle
-    implementation libraries.eureka_client
-    implementation libraries.httpcore
-    implementation libraries.jackson_databind
-    implementation libraries.jackson_dataformat_yaml
+    implementation "com.netflix.eureka:eureka-client:1.10.15"
+    implementation "org.apache.httpcomponents:httpcore:4.4.14"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.11.4"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.10"
 
-    providedCompile libraries.javax_servlet_api
-    compileOnly libraries.lombok
+    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
+    compileOnly "org.projectlombok:lombok:1.18.20"
     ```
 
     **Notes:**
     * You may need to add more dependencies as required by your service implementation.
-    * The information provided in this file is valid for `ZoweApimlVersion 1.3.0` and above.
+    * The information provided in this file is valid for `ZoweApimlVersion 1.3.0` and higher.
 
 5. In your project home directory, run the `gradle clean build` command to build your project. Alternatively, you can run `gradlew` to use the specific gradle version that is working with your project.
 
@@ -142,12 +142,10 @@ Use the following procedure if you use _Maven_ as your build automation system.
         </repository>
     </repositories>
     ```
-   
-    ```
-    **Tip:** If you want to use snapshot version, replace libs-release with libs-snapshot in the repository url and change snapshots->enabled to true.
+    **Tip:** If you want to use snapshot version, replace `libs-release` with `libs-snapshot` in the repository url and change snapshots->enabled to `true`.
 
 2. Add the proper dependencies:
-   ```maven
+   ```java
    <dependency>
        <groupId>org.zowe.apiml.sdk</groupId>
        <artifactId>onboarding-enabler-java</artifactId>
@@ -165,12 +163,12 @@ Use the following procedure if you use _Maven_ as your build automation system.
 
 ## Configuring your service
 
-To configure your service, provide default service configuration in the `service-configuration.yml` file located in your service source tree resources directory.
+To configure your service, create the configuration file `service-configuration.yml` in your service source tree resources directory. The default path for a java application is `src/main/resources`. The `service-configuration.yml` file is used to set the application properties and eureka metadata. Application properties are for your service runtime. For example, the `ssl` section specifies the keystore and trustore. The eureka metadata is used for registration with API Mediation Layer.
 
 **Note:** To externalize service onboarding configuration, see: [Externalizing onboarding configuration](onboard-plain-java-enabler-external-configuration.md).
 
 The following code snippet shows an example of `service-configuration.yml`. Some parameters which are specific for your service deployment
-are written in `${parameterValue}` format. For your service configuration file, provide actual values or externalize your onboarding configuration.
+are in `${parameterValue}` format. For your service configuration file, provide actual values or externalize your onboarding configuration.
 
 **Example:**
 
@@ -199,11 +197,17 @@ authentication:
     applid: ZOWEAPPL
 
  apiInfo:
-     - apiId: org.zowe.sampleservice
-       version: v1
+     - apiId: zowe.apiml.sampleservice
+       version: 1.0.0
        gatewayUrl: api/v1
        swaggerUrl: http://${sampleServiceSwaggerHost}:${sampleServiceSwaggerPort}/sampleservice/api-doc
        doumentationUrl: http://
+     - apiId: zowe.apiml.sampleservice
+       version: 2.0.0
+       gatewayUrl: api/v2
+       swaggerUrl: http://${sampleServiceSwaggerHost}:${sampleServiceSwaggerPort}/sampleservice/api-doc?group=api-v2
+       documentationUrl: http://
+       defaultApi: true
  catalog:
      tile:
          id: sampleservice
@@ -215,7 +219,6 @@ authentication:
     enabled: true
     verifySslCertificatesOfServices: true
     protocol: TLSv1.2
-    ciphers: TLS_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_EMPTY_RENEGOTIATION_INFO_SCSV
     keyAlias: localhost
     keyPassword: password
     keyStore: keystore/localhost.keystore.p12
@@ -226,7 +229,12 @@ authentication:
     trustStorePassword: password
  ```
 
-Optional metadata section
+**Optional metadata section**
+
+The following snippet presents additional optional metadata that can be added.
+
+**Example:**
+
 ```yaml
 customMetadata:
     yourqualifier:
@@ -294,14 +302,16 @@ The onboarding configuration parameters are broken down into the following group
 
      `protocol://host:port/servicename`
 
+    **Note:** Ensure that the `baseUrl` does not end with a trailing `/`. Inclusion of `/` causes a malformed URL if any of the above administrative endpoints begin with a `/`. It is expected that each administrative endpoint begins with a `/`. Warnings will be logged if this recommendation is not followed.
+
 *  **serviceIpAddress** (Optional)
 
-    Specifies the service IP address and can be provided by a system administrator in the externalized service configuration.
-    If this parameter is not present in the configuration file or is not set as a service context parameter, it will be resolved from the hostname part of the `baseUrl`.
+    This parameter specifies the service IP address and can be provided by a system administrator in the externalized service configuration.
+    If this parameter is not present in the configuration file or is not set as a service context parameter, it is resolved from the hostname part of the `baseUrl`.
 
 * **preferIpAddress** (Optional)
 
-    Set the value of the parameter to "true" if you want to advertise a service IP address instead of its hostname.
+    Set the value of this parameter to `true` to advertise a service IP address instead of its hostname.
 
 ### Administrative endpoints
 
@@ -360,11 +370,12 @@ The following snippet presents the information properties of a single API:
 
 ```
 apiInfo:
-    - apiId: org.zowe.sampleservice
-    version: v1
-    gatewayUrl: api/v1
-    swaggerUrl: http://localhost:10021/sampleservice/api-doc
-    documentationUrl: http://your.service.documentation.url
+    - apiId: zowe.apiml.sampleservice
+      version: 1.0.0
+      gatewayUrl: api/v1
+      swaggerUrl: http://localhost:10021/sampleservice/api-doc
+      documentationUrl: http://your.service.documentation.url
+      defaultApi: true
 ```
 
 where:
@@ -393,6 +404,11 @@ where:
 
      specifies the link to the external documentation. A link to the external documentation can be included along with the Swagger documentation.
 
+* **apiInfo.defaultApi** (Optional)
+
+    specifies that this API is the default one shown in the API Catalog. If no apiInfo fields have `defaultApi` set to `true`, the default API is the one
+    with the highest API `version`.
+
 
 ### API routing information
 
@@ -417,49 +433,49 @@ routes:
 
 * **routes**
 
-    specifies the container element for the routes.
+    specifies the container element for the route.
 
 * **routes.gatewayUrl**
 
-    The gatewayUrl parameter specifies the portion of the gateway URL which is replaced by the serviceUrl path part.
+    The `gatewayUrl` parameter specifies the portion of the gateway URL which is replaced by the `serviceUrl` path part.
 
 * **routes.serviceUrl**
 
-    The serviceUrl parameter provides a portion of the service instance URL path which replaces the gatewayUrl part.
+    The `serviceUrl` parameter provides a portion of the service instance URL path which replaces the `gatewayUrl` part.
 
-**Example:** 
-```
-https://gateway:10010/api/sampleservice 
-```
-will be routed to: 
-```
-https://service:10015/sampleservice-api
-```
-API major version 1:
-```
-https://gateway:10010/api/v1/sampleservice
-```
-will be routed to: 
-```
-https://service:10015/sampleservice-api/ver1
-```
-APIs docs major version 1:
-```
-https://gateway:10010/api/v1/api-doc/sampleservice
-```
-will be routed to:
-```
-https://service:10015/sampleservice-api/api-doc
-```
+**Examples:** 
+* ```
+  https://gateway:10010/api/sampleservice 
+  ```
+  is routed to: 
+  ```
+  https://service:10015/sampleservice-api
+  ```
+* API major version 1:
+    ```
+    https://gateway:10010/api/v1/sampleservice
+    ```
+    is routed to: 
+    ```
+    https://service:10015/sampleservice-api/ver1
+    ```
+* APIs docs major version 1:
+    ```
+    https://gateway:10010/api/v1/api-doc/sampleservice
+    ```
+    is routed to:
+    ```
+    https://service:10015/sampleservice-api/api-doc
+    ```
 
 ### API Catalog information
 
 The API ML Catalog UI displays information about discoverable REST services registered with the API ML Discovery Service.
-Information displayed in the Catalog is defined by the metadata provided by your service during registration. The Tile will look similar to the one shown on following image.
+Information displayed in the Catalog is defined by the metadata provided by your service during registration. The following image is an example of a tile in the API Catalog:
  
  ![Tile](../../images/api-mediation/API-Catalog-Tile.png "Tile of a sample service in API Catalog") 
 
-The Catalog groups correlated services in the same tile, if these services are configured with the same `catalog.tile.id` metadata parameter.
+The Catalog groups correlated services in the same tile if these services are configured with the same `catalog.tile.id` metadata parameter.
 
 The following code block is an example of configuration of a service tile in the Catalog:
 
@@ -499,11 +515,11 @@ where:
     **Note:** Ensure that you increase the version number when you introduce changes to the API service product family details.
 
 ### Authentication parameters
-These parameters are not required. When not specified, the default values are used.
+These parameters are not required. Parameters that are not specified results in the use of the default values. 
 
-Allows a service to accept the Zowe JWT token. The API Gateway translates the token to an authentication method supported by a service.
+Authentication parameters enables a service to accept the Zowe JWT. The API Gateway translates the token to an authentication method supported by a service.
 
-The following parameters define service authentication method:
+The following example shows the parameters that define the service authentication method:
 
 **Example:**
 
@@ -512,10 +528,11 @@ authentication:
     scheme: httpBasicPassTicket
     applid: ZOWEAPPL
 ```
+where:
 
 * **authentication.scheme**
 
-    This parameter specifies a service authentication scheme. 
+    specifies a service authentication scheme. 
     The following schemes are supported by the API Gateway:
     
     * **bypass**
@@ -524,72 +541,55 @@ authentication:
           
         **Note:** This is the default scheme when no authentication parameters are specified. 
         
-     * **zoweJwt**   
+    * **zoweJwt**   
      
-        This value specifies that a service accepts the Zowe JWT token. No additional processing is done by the API Gateway.
+       This value specifies that a service accepts the Zowe JWT. No additional processing is done by the API Gateway.
      
-     * **httpBasicPassTicket**
+    * **httpBasicPassTicket**
      
-        This value specifies that a service accepts PassTickets in the Authorization header of the HTTP requests using the basic authentication scheme.
-        It is necessary to provide a service APPLID in `authentication.applid` parameter.
+       This value specifies that a service accepts PassTickets in the Authorization header of the HTTP requests using the basic authentication scheme.
+       It is necessary to provide a service APPLID in `authentication.applid` parameter.
         
-        For more information, see [Enabling PassTicket creation for API Services that Accept PassTickets](api-mediation-passtickets.md)
+       For more information, see [Enabling PassTicket creation for API Services that Accept PassTickets](api-mediation-passtickets.md)
      
-     * **zosmf**
+    * **zosmf**
      
-        This value specifies that a service accepts z/OSMF LTPA (Lightweight Third-Party Authentication).
-        This scheme should be used only for z/OSMF service used by the API Gateway Authentication Service and other z/OSMF services that are using the same LTPA key.
+       This value specifies that a service accepts z/OSMF LTPA (Lightweight Third-Party Authentication).
+       This scheme should be used only for a z/OSMF service used by the API Gateway Authentication Service and other z/OSMF services that use the same LTPA key.
         
-        For more information about z/OSMF Single Sign-on, see [Establishing a single sign-on environment](https://www.ibm.com/support/knowledgecenter/SSLTBW_2.4.0/com.ibm.zosmfcore.multisysplex.help.doc/izuG00hpManageSecurityCredentials.html)
+       For more information about z/OSMF Single Sign-on, see [Establishing a single sign-on environment](https://www.ibm.com/support/knowledgecenter/SSLTBW_2.4.0/com.ibm.zosmfcore.multisysplex.help.doc/izuG00hpManageSecurityCredentials.html)
+  
+    * **safIdt**
+
+       This value specifies that the application recognizes the SAF IDT scheme and fills the `X-SAF-Token` header with the token produced by the Saf IDT provider implementation.
+  
+       For more information, see [SAF IDT provider](implement-new-saf-provider.md)
+
+    * **x509**
+
+        This value specifies that a service accepts client certificates forwarded in the HTTP header. The Gateway service extracts information from a valid client certificate. For validation, the certificate needs to be trusted by API Mediation Layer, and needs to contain a Client Authentication (1.3.6.1.5.5.7.3.2) entry in Extended Key Usage. To use this scheme, it is also necessary to specify which headers to include. Specify these parameters in `headers`.
+
+* **authentication.headers**
+        
+    When the `x509` scheme is specified, use the `headers` parameter to select which values to send to a service. Use one of the following values:
+    
+    * `X-Certificate-Public`
+    
+        The public part of client certificate base64 encoded 
+
+    * `X-Certificate-DistinguishedName`
+    
+        The distinguished name from client certificate
+
+    * `X-Certificate-CommonName` 
+    
+        The common name from the client certificate
 
 * **authentication.applid**
 
     This parameter specifies a service APPLID.
-    This parameter is valid only for `httpBasicPassTicket` authentication scheme.
+    This parameter is valid only for the `httpBasicPassTicket` authentication scheme.
     
-### API info
-
-REST services can provide multiple APIs. Add API info parameters for each API that your service wants to expose on the API ML.
-
-The following snippet presents the information properties of a single API:
-
-**Example:**
-
-```
-apiInfo:
-    - apiId: org.zowe.sampleservice
-    version: v1
-    gatewayUrl: api/v1
-    swaggerUrl: http://localhost:10021/sampleservice/api-doc
-    documentationUrl: http://your.service.documentation.url
-```
-
-where:
-* **apiInfo.apiId**
-
-    specifies the API identifier that is registered in the API ML installation.
-        The API ID uniquely identifies the API in the API ML.
-         The `apiId` can be used to locate the same APIs that are provided by different service instances. The API developer defines this ID.
-        The `apiId` must be a string of up to 64 characters
-        that uses lowercase alphanumeric characters and a dot: `.` .
-
-* **apiInfo.version**
-
-    specifies the api `version`. This parameter is used to correctly retrieve the API documentation according to requested version of the API.
-
-* **apiInfo.gatewayUrl**
-
-    specifies the base path at the API Gateway where the API is available.
-    Ensure that this value is the same path as the `gatewayUrl` value in the `routes` sections that apply to this API.
-
-* **apiInfo.swaggerUrl** (Optional)
-
-     specifies the Http or Https address where the Swagger JSON document is available.
-
-* **apiInfo.documentationUrl** (Optional)
-
-     specifies the link to the external documentation. A link to the external documentation can be included along with the Swagger documentation.    
-
 ### API Security
 
 REST services onboarded with the API ML act as both a client and a server. When communicating to API ML Discovery service, a REST service acts as a client. When the API ML Gateway is routing requests to a service, the REST service acts as a server.
@@ -599,7 +599,7 @@ The Zowe API ML Discovery Service communicates with its clients in secure Https 
 Client services need to configure several TLS/SSL parameters in order to communicate with the API ML Discovery service.
 When an enabler is used to onboard a service, the configuration is provided in the `ssl` section/group in the same _YAML_ file that is used to configure the Eureka parameters and the service metadata.
 
-For more information about API ML security see: [API ML security](api-mediation-security.md)
+For more information about API ML security, see [API ML security](api-mediation-security).
 
 TLS/SSL configuration consists of the following parameters:
 
@@ -625,7 +625,9 @@ TLS/SSL configuration consists of the following parameters:
 
 * **keyStore**
 
-  This parameter specifies the keystore file used to store the private key. When using keyring, this should be set to SAF keyring location. For information about required certificates, see [Zowe API ML TLS requirements](api-mediation-security.md#Zowe-API-ML-TLS-requirements).
+  This parameter specifies the keystore file used to store the private key. When using keyring, the value should be set to the SAF keyring location. For information about required certificates, see [Zowe API ML TLS requirements](api-mediation-security#zowe-api-ml-tls-requirements).
+
+  If you have an issue with loading the keystore file in your environment, try to provide the absolute path to the keystore file. The sample keystore file for local deployment is in [api-layer repository](https://github.com/zowe/api-layer/tree/master/keystore/localhost)
 
 * **keyStorePassword**
 
@@ -637,7 +639,9 @@ TLS/SSL configuration consists of the following parameters:
 
 * **trustStore**
 
-  This parameter specifies the truststore file used to keep other parties public keys and certificates. When using keyring, this should be set to SAF keyring location. For information about required certificates, see [Zowe API ML TLS requirements](api-mediation-security.md#Zowe-API-ML-TLS-requirements).
+  This parameter specifies the truststore file used to keep other parties public keys and certificates. When using keyring, this value should be set to the SAF keyring location. For information about required certificates, see [Zowe API ML TLS requirements](api-mediation-security#zowe-api-ml-tls-requirements).
+
+  If you have an issue with loading the truststore file in your environment, try to provide the absolute path to the truststore file. The sample truststore file for local deployment is in [api-layer repository](https://github.com/zowe/api-layer/tree/master/keystore/localhost)
 
 * **trustStorePassword: password**
 
@@ -647,27 +651,16 @@ TLS/SSL configuration consists of the following parameters:
 
   This parameter specifies the truststore type. The default for this parameter is PKCS12.
 
-* **ciphers:** (Optional)
-
-    This parameter specifies the recommended ciphers.
-
-    ```
-    TLS_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-    ```
-  
-    To secure the transfer of data, TLS/SSL uses one or more cipher suites. A cipher suite is a combination of authentication, encryption, and message authentication code (MAC) algorithms. Ciphers are used during the negotiation of security settings for a TLS/SSL connection as well as for the transfer of data.
-
 **Notes:**
 
 * Ensure that you define both the key store and the trust store even if your server is not using an Https port.
-* Currently `ciphers` is not used. It is optional and serves as a place holder only.
 
 ### SAF Keyring configuration
 
 You can choose to use SAF keyring instead of keystore and truststore for storing certificates.
-For information about required certificates, see [Zowe API ML TLS requirements](api-mediation-security.md#Zowe-API-ML-TLS-requirements). For information about running Java on z/OS with keyring, see [SAF Keyring](api-mediation-security.md#API-ML-SAF-Keyring). Make sure that the enabler can access and read the keyring. Please refer to documentation of your security system for details.
+For information about required certificates, see [Zowe API ML TLS requirements](api-mediation-security#zowe-api-ml-tls-requirements). For information about running Java on z/OS with keyring, see [SAF Keyring](api-mediation-security#api-ml-saf-keyring). Make sure that the enabler can access and read the keyring. Please refer to documentation of your security system for details.
 
-The following example shows enabler configuration with keyrings: 
+The following example shows enabler configuration with keyrings:
 ```
 ssl:
     keyAlias: localhost
@@ -702,7 +695,7 @@ where:
 
 ### Custom Metadata
 
-Custom metadata are described [here](custom-metadata.md).
+Custom metadata are described [here](../extend-apiml/custom-metadata).
     
 ##  Registering your service with API ML
 
@@ -868,10 +861,14 @@ The following code block is a full example of a context listener class implement
     }
 
 ## Validating the discoverability of your API service by the Discovery Service
-
 Once you are able to build and start your service successfully, you can use the option of validating that your service is registered correctly with the API ML Discovery Service.
 
-Validating your service registration can be done in the API ML Discovery Service or the API ML Catalog. If your service appears in the Discovery Service UI but is not visible in the API Catalog, check to make sure that your configuration settings are correct.
+**Follow these steps:**
+  1. [Validate successful onboarding](./onboard-overview.md#verify-successful-onboarding-to-the-api-ml)
+ 
+  2. Check that you can access your API service endpoints through the Gateway.
+
+  3. (Optional) Check that you can access your API service endpoints directly outside of the Gateway.
 
 Specific addresses and user credentials for the individual API ML components depend on your target runtime environment.
 
@@ -880,57 +877,6 @@ for both `username` and `password`. If API ML was installed by system administra
 with actual addresses of API ML components and the respective user credentials.
 
 **Tip:** Wait for the Discovery Service to discover your service. This process may take a few minutes after your service was successfully started.
-
-**Follow these steps:**
-
- 1. Use the Http `GET` method in the following format to query the Discovery Service for your service instance information:
-
-    ```
-    http://{eureka_hostname}:{eureka_port}/eureka/apps/{serviceId}
-    ```
-
- 2. Check your service metadata.
-
-    **Response example:**
-
-    ```xml
-    <application>
-        <name>{serviceId}</name>
-        <instanceId>{hostname}:{serviceId}:{port}</instanceId>
-        <hostName>{hostname}</hostName>
-        <app>{serviceId}</app>
-        <ipAddr>{ipAddress}</ipAddr>
-        <status>UP</status>
-        <port enabled="false">{port}</port>
-        <securePort enabled="true">{port}</securePort>
-        <vipAddress>{serviceId}</vipAddress>
-        <secureVipAddress>{serviceId}</secureVipAddress>
-        <metadata>
-                <apiml.service.description>Sample API service showing how to onboard the service</apiml.service.description>
-                <apiml.routes.api__v1.gatewayUrl>api/v1</apiml.routes.api__v1.gatewayUrl>
-                <apiml.catalog.tile.version>1.0.1</apiml.catalog.tile.version>
-                <apiml.routes.ws__v1.serviceUrl>/sampleclient/ws</apiml.routes.ws__v1.serviceUrl>
-                <apiml.routes.ws__v1.gatewayUrl>ws/v1</apiml.routes.ws__v1.gatewayUrl>
-                <apiml.catalog.tile.description>Applications which demonstrate how to make a service integrated to the API Mediation Layer ecosystem</apiml.catalog.tile.description>
-                <apiml.service.title>Sample Service ©</apiml.service.title>
-                <apiml.routes.ui__v1.gatewayUrl>ui/v1</apiml.routes.ui__v1.gatewayUrl>
-                <apiml.apiInfo.0.apiId>org.zowe.sampleclient</apiml.apiInfo.0.apiId>
-                <apiml.apiInfo.0.gatewayUrl>api/v1</apiml.apiInfo.0.gatewayUrl>
-                <apiml.apiInfo.0.documentationUrl>https://www.zowe.org</apiml.apiInfo.0.documentationUrl>
-                <apiml.catalog.tile.id>samples</apiml.catalog.tile.id>
-                <apiml.routes.ui__v1.serviceUrl>/sampleclient</apiml.routes.ui__v1.serviceUrl>
-                <apiml.routes.api__v1.serviceUrl>/sampleclient/api/v1</apiml.routes.api__v1.serviceUrl>
-                <apiml.apiInfo.0.swaggerUrl>https://hostname/sampleclient/api-doc</apiml.apiInfo.0.swaggerUrl>
-                <apiml.catalog.tile.title>Sample API Mediation Layer Applications</apiml.catalog.tile.title>
-        </metadata>
-    </application>
-    ```
-
-  3. Check that your API service is displayed in the API Catalog and all information including API documentation is correct.
-
-  4. Check that you can access your API service endpoints through the Gateway.
-
-  5. (Optional) Check that you can access your API service endpoints directly outside of the Gateway.
 
 ## Troubleshooting
 

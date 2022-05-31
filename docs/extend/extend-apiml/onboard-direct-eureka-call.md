@@ -16,15 +16,15 @@ For more information about how to onboard a REST service, see the following link
 This article outlines a process to make an API service available in the API Mediation Layer by making a direct call to the Eureka Discovery Service.
 
 * [Introduction](#introduction)
-* [Registering with the Discovery Service](#Registering-with-the-Discovery-Service)
-    * [API Mediation Layer Service onboarding metadata](#API-Mediation-Layer-Service-onboarding-metadata)
-        * [Catalog parameters](#Catalog-parameters)
-        * [Service parameters](#Service-parameters)
-        * [Routing parameters](#Routing-parameters)
-        * [API Info Parameters](#API-Info-parameters)
-* [Sending a heartbeat to API Mediation Layer Discovery Service](#Sending-a-heartbeat-to-API-Mediation-Layer-Discovery-Service)
-* [Validating successful onboarding with the API Mediation Layer](#Validating-successful-onboarding-with-the-API-Mediation-Layer)
-* [External Resources](#External-Resources)
+* [Registering with the Discovery Service](#registering-with-the-discovery-service)
+    * [API Mediation Layer Service onboarding metadata](#api-mediation-layer-service-onboarding-metadata)
+        * [Catalog parameters](#catalog-parameters)
+        * [Service parameters](#service-parameters)
+        * [Routing parameters](#routing-parameters)
+        * [API Info Parameters](#api-info-parameters)
+* [Sending a heartbeat to API Mediation Layer Discovery Service](#sending-a-heartbeat-to-api-mediation-layer-discovery-service)
+* [Validating successful onboarding with the API Mediation Layer](#validating-successful-onboarding-with-the-api-mediation-layer)
+* [External Resources](#external-resources)
 
 ## Introduction
 
@@ -79,7 +79,7 @@ where:
 
     * The service ID value contains only lowercase alphanumeric characters.
     * The service ID does not contain more than 40 characters.
-    * The same service ID is only set for multiple API service instances to support API scalability. When two API services use the same service ID, the API Gateway considers the services as clones of each other. An incoming API request can be routed to either of them through load balancing.
+    * The same service ID is only set for multiple API service instances to support API scalability. When two API services use the same service ID, the API Gateway considers the services as clones of each other. An incoming API request can be routed to either instance through load balancing.
 
     **Example:**
     * If the `serviceId` is `sampleservice`, the service URL in the API ML Gateway address space appears as:
@@ -108,7 +108,9 @@ where:
 
     specifies the `serviceId` when you use Http.
 
-     **Important!** Ensure that the value of `vipAddress` is the same as the value of `app`.
+     **Important!** Ensure that the value of `vipAddress` is the same as the value of `app`. 
+     Furthermore, be sure not to omit `vipAddress`, even if you provided `secureVipAddress`. Due to 
+     a current limitation in Spring Cloud Netflix, routes are created only for instances in which `vipAddress` is defined.
 
  * **secureVipAddress**
 
@@ -147,7 +149,7 @@ At registration time, provide metadata in the following format. Metadata paramet
       <apiml.routes.ws__v1.serviceUrl>/sampleclient/ws</apiml.routes.ws__v1.serviceUrl>
       <apiml.authentication.scheme>httpBasicPassTicket</apiml.authentication.scheme>
       <apiml.authentication.applid>ZOWEAPPL</apiml.authentication.applid>
-      <apiml.apiInfo.0.apiId>org.zowe.sampleclient</apiml.apiInfo.0.apiId>
+      <apiml.apiInfo.0.apiId>zowe.apiml.sampleclient</apiml.apiInfo.0.apiId>
       <apiml.apiInfo.0.swaggerUrl>https://hostname/sampleclient/api-doc</apiml.apiInfo.0.swaggerUrl>
       <apiml.apiInfo.0.gatewayUrl>api/v1</apiml.apiInfo.0.gatewayUrl>
       <apiml.apiInfo.0.documentationUrl>https://www.zowe.org</apiml.apiInfo.0.documentationUrl>
@@ -157,11 +159,11 @@ At registration time, provide metadata in the following format. Metadata paramet
 
 Metadata parameters are broken down into the following categories:
 
-* [Catalog parameters](#Catalog-parameters)
-* [Service parameters](#Service-parameters)
-* [Routing parameters](#Routing-parameters)
-* [Authentication parameters](#Authentication-parameters)
-* [API Info parameters](#API-Info-parameters)
+* [Catalog parameters](#catalog-parameters)
+* [Service parameters](#service-parameters)
+* [Routing parameters](#routing-parameters)
+* [Authentication parameters](#authentication-parameters)
+* [API Info parameters](#api-info-parameters)
 
 #### Catalog parameters
 Catalog parameters are grouped under the prefix: `apiml.catalog.tile`.
@@ -216,7 +218,7 @@ The following parameters define service information for the API Catalog:
 
     When this parameter is set to `true`, the Gateway allows encoded characters to be part of URL requests redirected through the Gateway. The default setting of `false` is the recommended setting. Change this setting to `true` only if you expect certain encoded characters in your application's requests.
 
-    **Important!**  When the expected encoded character is an encoded slash or backslash (`%2F`, `%5C`), make sure the Gateway is also configured to allow encoded slashes. For more info see [Installing the Zowe runtime on z/OS](../../user-guide/install-zos.md).
+    **Important!**  When the expected encoded character is an encoded slash or backslash (`%2F`, `%5C`), make sure the Gateway is also configured to allow encoded slashes. For more info see [Installing the Zowe runtime on z/OS](../../user-guide/install-zos).
 
 * **apiml.connectTimeout**
     
@@ -237,7 +239,30 @@ The following parameters define service information for the API Catalog:
 * **apiml.service.corsEnabled**
     
     When this parameter is set to `true`, CORS is enabled on the service level for all service routes. 
-    The same parameter can also be set on the service level, by providing the parameter as `customMetadata` as shown in the [custom metadata.md](custom-metadata.md).
+    The same parameter can also be set on the service level, by providing the parameter as `customMetadata` as shown in the [Custom Metadata](custom-metadata).
+
+* **apiml.response.compress**
+
+    When this parameter is set to `true`, API ML compresses content for all responses from these services using GZIP. API ML also adds the `Content-Encoding` header with the value `gzip` to responses.
+
+* **customMetadata.apiml.response.compressRoutes**
+
+    When the `customMetadata.apiml.response.compress` parameter is set to `true`, this parameter allows the services to further limit the compressed routes. The parameter accepts [ant style](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/util/AntPathMatcher.html) routes deliminated by `,` . The expectation is to provide the absolute paths. If relative paths are provided, the starting `/` is added. If the beginning of the pattern does not require specification, use `**/{pathYouAreInterestedIn}`
+
+    **Examples** 
+
+    * `/service/**`
+    
+      Compresses all paths starting with `/service/`
+
+    * `/service/api/v1/compress,/service/api/v1/custom-compress`
+    
+      Compresses the specific two routes
+
+    * `/\*\*/compress/\*\*`
+    
+      Compresses all paths that contain `compress` as a specific path
+
       
 #### Routing parameters
 Routing parameters are grouped under the prefix: `apiml.routes`
@@ -294,24 +319,57 @@ The following parameters define the service authentication method:
 
         **Note:** This is the default scheme when no authentication parameters are specified.
 
-     * **zoweJwt**
+    * **zoweJwt**
 
         This value specifies that a service accepts the Zowe JWT token. No additional processing is done by the API Gateway.
 
-     * **httpBasicPassTicket**
+    * **httpBasicPassTicket**
 
         This value specifies that a service accepts PassTickets in the Authorization header of the HTTP requests using the basic authentication scheme.
         It is necessary to provide a service APPLID in the `apiml.authentication.applid` parameter.
 
-        **Tip:** For more information, see [Enabling PassTicket creation for API Services that Accept PassTickets](api-mediation-passtickets.md).
+        **Tip:** For more information, see [Enabling PassTicket creation for API Services that Accept PassTickets](api-mediation-passtickets).
 
-     * **zosmf**
+    * **zosmf**
 
         This value specifies that a service accepts z/OSMF LTPA (Lightweight Third-Party Authentication).
         This scheme should only be used for a z/OSMF service used by the API Gateway Authentication Service, and other z/OSMF services that are using the same LTPA key.
 
         **Tip:** For more information about z/OSMF Single Sign-on, see [Establishing a single sign-on environment](https://www.ibm.com/support/knowledgecenter/SSLTBW_2.4.0/com.ibm.zosmfcore.multisysplex.help.doc/izuG00hpManageSecurityCredentials.html).
 
+    * **safIdt**
+
+        This value specifies that the application recognizes the SAF IDT scheme and fills the `X-SAF-Token` header with the token produced by the Saf IDT provider implementation.
+    
+        For more information, see [SAF IDT provider](implement-new-saf-provider.md)
+
+    * **x509**
+
+        This value specifies that a service accepts client certificates forwarded in the HTTP header. The Gateway service extracts information from a valid client certificate. For validation, the certificate needs to be trusted by API Mediation Layer, and needs to contain a Client Authentication (1.3.6.1.5.5.7.3.2) entry in Extended Key Usage. To use this scheme, it is also necessary to specify which headers to include. Specify these parameters in `headers`.
+
+    * **zosmf**
+        
+        This value specifies that a service accepts z/OSMF LTPA (Lightweight Third-Party Authentication).
+        This scheme should only be used for a z/OSMF service used by the API Gateway Authentication Service, and other z/OSMF services that are using the same LTPA key.
+        
+        **Tip:** For more information about z/OSMF Single Sign-on, see [Establishing a single sign-on environment](https://www.ibm.com/support/knowledgecenter/SSLTBW_2.4.0/com.ibm.zosmfcore.multisysplex.help.doc/izuG00hpManageSecurityCredentials.html).
+
+* **authentication.headers**
+    
+    When the `x509` scheme is specified, use the `headers` parameter to select which values to send to a service. Use one of the following values:
+    
+    * `X-Certificate-Public`
+    
+        The public part of the client certificate base64 encoded 
+
+    * `X-Certificate-DistinguishedName`
+    
+        The distinguished name the from client certificate
+
+    * `X-Certificate-CommonName` 
+    
+        The common name from the client certificate
+    
 * **apiml.authentication.applid**
 
     This parameter specifies a service APPLID.
@@ -352,11 +410,16 @@ The following parameters provide the information properties of a single API:
 
     (Optional) This parameter specifies the link to the external documentation. A link to the external documentation can be included along with the Swagger documentation.
 
+* **apiml.apiInfo.{api-index}.defaultApi**
+
+    (Optional) This parameter specifies if the API is the default one shown in the API Catalog. If no API has this parameter set to `true`, or multiple APIs have it set to `true`,
+    then the default API becomes the API with the highest major version seen in `apiml.apiInfo.{api-index}.version`.
+
 **Note:** The `{api-index}` is used to differentiate the service APIs. This index must be provided manually when _XML_ configuration is used.
 In the following example, `0` represents the `api-index`.
 
 ```
-<apiml.apiInfo.0.apiId>org.zowe.sampleclient</apiml.apiInfo.0.apiId>
+<apiml.apiInfo.0.apiId>zowe.apiml.sampleclient</apiml.apiInfo.0.apiId>
 <apiml.apiInfo.0.swaggerUrl>https://hostname/sampleclient/api-doc</apiml.apiInfo.0.swaggerUrl>
 <apiml.apiInfo.0.gatewayUrl>api/v1</apiml.apiInfo.0.gatewayUrl>
 <apiml.apiInfo.0.documentationUrl>https://www.zowe.org</apiml.apiInfo.0.documentationUrl>
@@ -375,58 +438,14 @@ If the server does not receive a renewal in 90 seconds, it removes the instance 
 ```https://{eureka_hostname}:{eureka_port}/eureka/apps/{serviceId}/{instanceId}```
 
 ## Validating successful onboarding with the API Mediation Layer
-Ensure that you successfully onboarded a service with the API Mediation Layer.
+Ensure that you successfully onboarded a service with the API Mediation Layer. 
 
 **Follow these steps:**
+  1. [Validate successful onboarding](./onboard-overview.md#verify-successful-onboarding-to-the-api-ml)
+ 
+  2. Check that you can access your API service endpoints through the Gateway.
 
- 1. In your Http client such as HTTPie, Postman, or cURL use the Http `GET` method in the following format to query the Discovery Service for your service instance information:
-
-    ```
-    http://{eureka_hostname}:{eureka_port}/eureka/apps/{serviceId}
-    ```
-
- 2. Check your service metadata.
-
-    **Response example:**
-
-    ```xml
-    <application>
-        <name>{serviceId}</name>
-        <instanceId>{hostname}:{serviceId}:{port}</instanceId>
-        <hostName>{hostname}</hostName>
-        <app>{serviceId}</app>
-        <ipAddr>{ipAddress}</ipAddr>
-        <status>UP</status>
-        <port enabled="false">{port}</port>
-        <securePort enabled="true">{port}</securePort>
-        <vipAddress>{serviceId}</vipAddress>
-        <secureVipAddress>{serviceId}</secureVipAddress>
-        <metadata>
-                <apiml.service.description>Sample API service showing how to onboard the service</apiml.service.description>
-                <apiml.routes.api__v1.gatewayUrl>api/v1</apiml.routes.api__v1.gatewayUrl>
-                <apiml.catalog.tile.version>1.0.1</apiml.catalog.tile.version>
-                <apiml.routes.ws__v1.serviceUrl>/sampleclient/ws</apiml.routes.ws__v1.serviceUrl>
-                <apiml.routes.ws__v1.gatewayUrl>ws/v1</apiml.routes.ws__v1.gatewayUrl>
-                <apiml.catalog.tile.description>Applications which demonstrate how to make a service integrated to the API Mediation Layer ecosystem</apiml.catalog.tile.description>
-                <apiml.service.title>Sample Service</apiml.service.title>
-                <apiml.routes.ui__v1.gatewayUrl>ui/v1</apiml.routes.ui__v1.gatewayUrl>
-                <apiml.apiInfo.0.apiId>org.zowe.sampleclient</apiml.apiInfo.0.apiId>
-                <apiml.apiInfo.0.gatewayUrl>api/v1</apiml.apiInfo.0.gatewayUrl>
-                <apiml.apiInfo.0.documentationUrl>https://www.zowe.org</apiml.apiInfo.0.documentationUrl>
-                <apiml.catalog.tile.id>samples</apiml.catalog.tile.id>
-                <apiml.routes.ui__v1.serviceUrl>/sampleclient</apiml.routes.ui__v1.serviceUrl>
-                <apiml.routes.api__v1.serviceUrl>/sampleclient/api/v1</apiml.routes.api__v1.serviceUrl>
-                <apiml.apiInfo.0.swaggerUrl>https://hostname/sampleclient/api-doc</apiml.apiInfo.0.swaggerUrl>
-                <apiml.catalog.tile.title>Sample API Mediation Layer Applications</apiml.catalog.tile.title>
-        </metadata>
-    </application>
-    ```
-
-  3. Check that your API service is displayed in the API Catalog and all information including API documentation is correct.
-
-  4. Check that you can access your API service endpoints through the Gateway.
-
-  5. (Optional) Check that you can access your API service endpoints directly outside of the Gateway.
+  3. (Optional) Check that you can access your API service endpoints directly outside of the Gateway.
 
 ## External Resources
 

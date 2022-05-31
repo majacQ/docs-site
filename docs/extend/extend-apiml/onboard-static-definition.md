@@ -175,6 +175,7 @@ services:
           swaggerUrl: http://localhost:8080/v2/swagger.json
           documentationUrl: https://petstore.swagger.io/
           version: 2.0.0
+          defaultApi: true
       customMetadata:
           yourqualifier:
               key1: value1
@@ -341,13 +342,39 @@ additionalServiceMetadata:
             
             **Tip:** For more information, see [Enabling PassTicket creation for API Services that accept PassTickets](api-mediation-passtickets.md).
          
+        * **safIdt**
+
+            This value specifies that the application recognizes the SAF IDT scheme and fills the `X-SAF-Token` header with the token produced by the Saf IDT provider implementation.
+        
+            For more information, see [SAF IDT provider](implement-new-saf-provider.md)
+
+        * **x509**
+
+            This value specifies that a service accepts client certificates forwarded in the HTTP header. The Gateway service extracts information from a valid client certificate. For validation, the certificate needs to be trusted by API Mediation Layer, and needs to contain a Client Authentication (1.3.6.1.5.5.7.3.2) entry in Extended Key Usage. To use this scheme, it is also necessary to specify which headers to include. Specify these parameters in `headers`.
+
          * **zosmf**
          
             This value specifies that a service accepts z/OSMF LTPA (Lightweight Third-Party Authentication).
             This scheme should only be used for a z/OSMF service used by the API Gateway Authentication Service, and other z/OSMF services that are using the same LTPA key.
             
             **Tip:** For more information about z/OSMF Single Sign-on, see [Establishing a single sign-on environment](https://www.ibm.com/support/knowledgecenter/SSLTBW_2.4.0/com.ibm.zosmfcore.multisysplex.help.doc/izuG00hpManageSecurityCredentials.html).
-    
+
+    * **authentication.headers**
+        
+        When the `x509` scheme is specified, use the `headers` parameter to select which values to send to a service. Use one of the following values:
+        
+        * `X-Certificate-Public`
+        
+           The public part of client certificate base64 encoded 
+
+        * `X-Certificate-DistinguishedName`
+        
+           The distinguished name from client certificate
+
+        * `X-Certificate-CommonName` 
+        
+          The common name from the client certificate
+          
     * **authentication.applid**
     
         This parameter specifies a service APPLID.
@@ -370,9 +397,9 @@ additionalServiceMetadata:
 
         **Examples:**
 
-        - `org.zowe.file`
-        - `com.ca.sysview`
-        - `com.ibm.zosmf`
+        - `zowe.file`
+        - `ca.sysview`
+        - `ibm.zosmf`
 
     * **apiInfo.gatewayUrl**
 
@@ -390,6 +417,11 @@ additionalServiceMetadata:
     * **apiInfo.version**
 
         (Optional) This parameter specifies the actual version of the API in [semantic versioning](https://semver.org/) format. This can be used when _swaggerUrl_ is not provided.
+
+    * **apiInfo.defaultApi**
+        
+        (Optional) This parameter specifics that the API is the default one to show in the API Catalog. If this not set to true for any API, or multiple APIs have it set to true,
+        then the default API becomes the API with the highest major version as seen in `apiInfo.version`.
 
 * **customMetadata**
 
@@ -468,15 +500,7 @@ The following procedure describes how to add your service to the API Mediation L
 
     **Tip:** Wait for the services to be ready. This process may take a few minutes.
 
-4.  Go to the following URL to reach the API Gateway (`port 10010`) and see the paths that are routed by the API Gateway. If the authentication is required and the default configuration provider on local instance is used the username is user and password user:
-
-    `https://localhost:10010/application/routes`
-
-    The following line should appear:
-
-    `/api/v2/petstore/**: "petstore"`
-
-    This line indicates that requests to relative gateway paths that start with `/api/v2/petstore/` are routed to the service with the service ID `petstore`.
+4.  [Validate successful onboarding](./onboard-overview.md#verify-successful-onboarding-to-the-api-ml)
 
     You successfully defined your Java application if your service is running and you can access the service endpoints. The following example is the service endpoint for the sample application:
 
@@ -509,15 +533,7 @@ After you define and validate the service in YAML format, you are ready to add y
 
 4. Restart Zowe runtime or follow steps in section [(Optional) Reload the services definition after the update when the API Mediation Layer is already started](#optional-reload-the-services-definition-after-the-update-when-the-api-mediation-layer-is-already-started) which allows you to add your static API service to an already running Zowe.  
 
-5.  Go to the following URL to reach the API Gateway (default port 7554) and see the paths that are routed by the API Gateway:
-
-    `https://${zoweHostname}:${gatewayHttpsPort}/application/routes`
-
-    The following line should appear:
-
-    `/api/v2/petstore/**: "petstore"`
-
-    This line indicates that requests to the relative gateway paths that start with `/api/v2/petstore/` are routed to the service with service ID `petstore`.
+5.  [Validate successful onboarding](./onboard-overview.md#verify-successful-onboarding-to-the-api-ml)
 
 You successfully defined your Java application if your service is running and you can access its endpoints. The endpoint displayed for the sample application is:
 ```
@@ -534,7 +550,7 @@ Static API definition file: /Users/plape03/workspace/api-layer/config/local/api-
 Adding static instance STATIC-localhost:petstore:8080 for service ID petstore mapped to URL http://localhost:8080
 ```
 
-   **Note:** If these messages are not displayed in the log, ensure that the [API ML debug mode](https://docs.zowe.org/stable/troubleshoot/troubleshoot-apiml.html#enable-api-ml-debug-mode) is active.
+   **Note:** If these messages are not displayed in the log, ensure that the [API ML debug mode](https://docs.zowe.org/stable/troubleshoot/troubleshoot-apiml#enable-api-ml-debug-mode) is active.
 
 ## (Optional) Reload the services definition after the update when the API Mediation Layer is already started
 
@@ -552,6 +568,12 @@ The following procedure enables you to refresh the API definitions after you cha
 
     ```
     httpie --cert=keystore/localhost/localhost.pem --verify=keystore/local_ca/localca.cer -j POST     https://localhost:10011/discovery/api/v1/staticApi
+    ```
+   
+    Alternatively, it is possible to use curl to issue the POST call if it is installed on your system:
+    
+    ```
+    curl -X POST --cert keystore/localhost/localhost.pem --cacert keystore/localhost/localhost.keystore.cer https://localhost:10011/discovery/api/v1/staticApi
     ```
 
 2. Check if your updated definition is effective.

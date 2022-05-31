@@ -6,7 +6,7 @@ After the Zowe&trade; started task `ZWESVSTC` is running, follow the instruction
 - [Verifying API Mediation installation](#verifying-api-mediation-installation)
 - [Verifying z/OS Services installation](#verifying-z-os-services-installation)
 
-**Note:** Not all components may have been started. Which components have been started depends on your setting of the variable `LAUNCH_COMPONENT_GROUPS` in the `instance.env` file. If you defined the value `GATEWAY`, the API Mediation Layer and z/OS Services are started. If you defined the value `DESKTOP`, the Zowe Application Framework (also known as Zowe desktop) is started. For more information, see [Creating and configuring the Zowe instance directory](configure-instance-directory.md#component-groups).  
+**Note:** Not all components may have been started. Which components have been started depends on your setting of the variable `LAUNCH_COMPONENT_GROUPS` in the `instance.env` file. If you defined the value `GATEWAY`, the API Mediation Layer and z/OS Services are started. If you defined the value `DESKTOP`, the Zowe Application Framework (also known as Zowe desktop) is started. Those using Docker may only have `ZSS` started. For more information, see [Creating and configuring the Zowe instance directory](configure-instance-directory.md#component-groups).
 
 ## Verifying Zowe Application Framework installation
 
@@ -34,7 +34,7 @@ https://myhost:httpsPort/api/v1/apicatalog/application/health
 
 where, 
 
-- _myHost_ is the host on which you installed the Zowe Application Server.
+- _myHost_ is the host on which you installed the Zowe API Mediation Layer.
 - _httpsPort_ is the port number value `GATEWAY_PORT` in `instance.env`. For more information, see [Creating and configuring the Zowe instance directory](configure-instance-directory.md#ports).
 
 **Example:**
@@ -42,7 +42,7 @@ where,
 The following example illustrates how to use the **curl** utility to invoke API Mediation Layer endpoint and the **grep** utility to parse out the response status variable value
 
 ```
-$ curl -v -k --silent https://myhost:httpsPort/api/v1/apicatalog/application/health 2>&1 | grep -Po '(?<=\"status\"\:\")[^\"]+'
+$ curl -v -k --silent https://myhost:httpsPort/api/v1/apicatalog/application/health 2>&1 | awk '/"status":"UP"/' | awk -F\" '{print$4;}'
 UP
 ```
 

@@ -35,26 +35,31 @@ You might have reached the limit for shared message queues on your LPAR. When No
 When you attempt to log in to the Zowe Desktop, you receive the following error message that is displayed beneath the **Username** and **Password** fields. 
 
 ```
-Authentication failed for 1 types:  Types: ["zss"]
+Authentication failed for 3 types:  Types: ["saf","apiml","zss"]
 ```
+The Zowe desktop attempts to authenticate the credentials using the types that have been configured, by default the three above of `["saf","apiml","zss"]`. If Zowe has been configured with the `LAUNCH_COMPONENT_GROUPS=DESKTOP` where `GATEWAY` is not a launch group, then the message will just include the types `["saf","zss"]`.
 
 **Solution:**
 
+This error may simply mean your password is not correct. If that's not the case, please continue on following troubleshooting guidance.
+
 For the Zowe Desktop to work, the node server that runs under the ZWESVSTC started task must be able to make cross memory calls to the ZWESIS01 load module running under the ZWESISTC started task. If this communication fails, you see the authentication error.  
 
-There are two known problems that might cause this error.  The [Zowe architecture diagram](../../getting-started/zowe-architecture.md) shows the following connections. One of these two connections likely failed. 
+There are three known problems that might cause this error.  The [Zowe architecture diagram](../../getting-started/zowe-architecture.md) shows the following connections. One of these three connections likely failed. 
 
-1. The zssServer connection to the `ZWESISTC` started task using cross memory communication. If this fails, see [zssServer unable to communicate with X-MEM](#zss-server-unable-to-communicate-with-x-mem).
-2. The Zowe Desktop ZLUX server connection to the zssServer across the default port 8542. If this fails, see [ZLUX unable to communicate with zssServer](#zlux-unable-to-communicate-with-zssserver). 
+1. The zssServer connection to the `ZWESISTC` started task using cross memory communication. If this fails, see [zssServer unable to communicate with X-MEM](#zss-server-unable-to-communicate-with-x-mem).  The architecture diagram below has been annotated with a (1) to show this connection.
+2. The Zowe Desktop ZLUX server connection to the zssServer across the default port 8542. If this fails, see [ZLUX unable to communicate with zssServer](#zlux-unable-to-communicate-with-zssserver).  The architecture diagram below has been annotated with a (2) to show this connection.  
+3. The Zowe Desktop ZLUX server cannot connect to API Mediation Layer for authentication. If this fails, see [ZLUX unable to communicate with API Mediation Layer](#zlux-unable-to-communicate-with-api-mediation-layer).
 
-<img src="../../images/common/zowe-desktop-unable-to-logon.png" alt="Zowe Desktop Unable to logon.png" width="700px"/> 
-
+<img src={require("../../images/common/zowe-desktop-unable-to-logon.png").default} alt="Zowe Desktop Unable to logon.png" width="700px"/> 
 
 ### ZSS server unable to communicate with X-MEM
 
-1. Open the log file `$INSTANCE_DIR/logs/zssServer-yyyy-mm-dd-hh-ss.log`.  This file is created each time ZWESVSTC is started and only the last five files are kept.  
+- Open the log file `$INSTANCE_DIR/logs/zssServer-yyyy-mm-dd-hh-ss.log`.  This file is created each time ZWESVSTC is started and only the last five files are kept.  
 
-2. Look for the message that starts with `ZIS status`.  
+- Look for the message that starts with `ZIS status`.  
+
+
 
    - If the communication works, the message includes `Ok`. For example:
 
@@ -71,12 +76,29 @@ There are two known problems that might cause this error.  The [Zowe architectur
      ```
      or
      ```
-     ZIS status - Failure (name='ZWESIS_STD      ', cmsRC=64, description='N/A', clientVersion=2)
+     ZIS status - Failure (name='ZWESIS_STD      ', cmsRC=64, description='N/A', clientVersion=`2`)
+     ```
+     or
+     ```
+     ZIS status - 'Failure' (name='ZWESI_STD     ', cmsRC='12', description='N/A', clientVersion='2')
      ```
 
      In this case, check that the ZWESISTC started task is running. If not, start it with the TSO command `/S ZWESISTC`
     
-   - If the problem cannot be easily fixed (such as the ZWESISTC task not running), then it is likely that the cross memory server is not running. To check whether the cross memory is running, check that the started task `ZWESISTC` is active.  
+   - If the problem cannot be easily fixed (such as the ZWESISTC task not running), then it is likely that the cross memory server is not running. To check whether the cross memory is running, check the started task `ZWESISTC` log for any errors.  
+
+   - If the cross memory server `ZWESISTC` started task is running, check that the program name of the cross memory procedure matches between the `ZWESISTC` PROBLIB member and the `instance.env` file used to launch Zowe. 
+    
+     By default the proc value is `ZWESIS_STD`, and if a new name is chosen then both files need to be updated for the handshake to be successful.
+
+     The line in the `ZWESISTC` problib that defines the procedure name that cross memory will use is
+     ```
+     //ZWESISTC  PROC NAME='ZWESIS_STD',MEM=00,RGN=0M
+     ```
+     The line in the `instance.env` that specifies the cross memory procedure that the zssServer will try to attach to is
+     ```
+     ZOWE_ZSS_XMEM_SERVER_NAME=ZWESIS_STD
+     ```
    
    - If this is the first time you set up Zowe, it is possible that the cross memory server configuration did not complete successfully. To set up and configure the cross memory server, follow steps as described in the topic [Installing and configuring the Zowe cross memory server (ZWESISTC)](../../user-guide/configure-xmem-server.md).  Once `ZWESISTC` is started, if problems persist, check its log to ensure it has been able to correctly locate its load module ZWESIS01 as well as the parmlib ZWESIP00.  
 
@@ -94,15 +116,16 @@ There are two known problems that might cause this error.  The [Zowe architectur
     ```
     ZIS status - Failure read failed ret code 1121 reason 0x76650446
     ```
-    If you are using AT/TLS, then the ```"attls" : true``` statement might be missing from the ```zluxserver.json``` file. For more information, see [Configuring Zowe App Server for HTTPS communication with ZSS](../../user-guide/mvd-configuration.html#configuring-zss-for-https).
+    If you are using AT/TLS, then the ```"attls" : true``` statement might be missing from the ```zluxserver.json``` file. For more information, see [Configuring Zowe App Server for HTTPS communication with ZSS](../../user-guide/mvd-configuration#configuring-zss-for-https).
 
 
 ### ZLUX unable to communicate with zssServer
 
 Follow these steps: 
-1. Open the log file `$INSTANCE_DIR/logs/appServer-yyyy-mm-dd-hh-ss.log`.  This file is created each time ZWESVSTC is started and only the last five files are kept.  
 
-2. Look for the message that starts with `GetAddrInfoReqWrap.onlookup` and the log messages below.  
+- Open the log file `$INSTANCE_DIR/logs/appServer-yyyy-mm-dd-hh-ss.log`.  This file is created each time ZWESVSTC is started and only the last five files are kept.  
+
+- Look for the message that starts with `GetAddrInfoReqWrap.onlookup` and the log messages below.  
 
    ```
    yyyy-mm-dd hh:mm:ss.ms <ZWED:16842977> ZWESVUSR INFO (_zsf.apiml,apiml.
@@ -114,7 +137,9 @@ Follow these steps:
      syscall: 'getaddrinfo',                                              
      hostname: 'localhost'                                                    
    ``` 
-3. Map localhost to port 127.0.0.1. 
+  These messages show that the host name `localhost` cannot be reached between the Zowe desktop server and the zssServer because `localhost` has not been mapped to an IP address.  
+
+- Map localhost to port 127.0.0.1. 
 
    Create an entry in the file `/etc/hosts` that contains the line
 
@@ -122,7 +147,26 @@ Follow these steps:
    127.0.0.1       localhost
    ```
 
-4. Restart the `ZWESVSTC` address space.
+- Restart the `ZWESVSTC` address space.
+
+
+### Slow performance of the VT terminal on SSH
+
+**Symptom:**
+
+When you try to use VT terminal on the Zowe Desktop to connect to the UNIX System Services through SSH, the VT terminal on node v12 slows down. Then, the connection fails because the connecting process can run into the 3-minute limit.
+
+**Solution:**
+
+To solve this issue, use Telnet through port 1023 to connect to the UNIX System Services.
+
+### ZLUX unable to communicate with API Mediation Layer
+
+Follow these steps:
+
+- Verify whether API Mediation Layer is started or not. If it is started, you can see a service status page with all green check marks by visiting `https://<your-zowe-host>:<gateway-port>`. If there are any red cross marks, follow the instructions in [Troubleshooting API ML](../troubleshoot-apiml.md) to identify and solve the issue.
+- You may need to wait a little longer to allow API Mediation Layer Gateway to complete the environment test. This could be more noticeable with certain z/OSMF level and Zowe v1.20.0 release and later.
+
 
 ## Server startup problem ret=1115
 
@@ -160,7 +204,6 @@ If the identifier is not in the logs, make sure the plug-in's locator file is in
 
 For more information on loading plug-ins to the Desktop, see [Adding Your App to the Desktop](https://github.com/zowe/workshop-user-browser-app/blob/master/README.md).
 
-
 ## Error: You must specify MVD_DESKTOP_DIR in your environment
 
 **Symptom:** 
@@ -185,7 +228,7 @@ Add the Zowe Desktop directory path to the `MVD_DESKTOP_DIR` environment variabl
 After launching the started task `ZWESVSTC` there are no Zowe desktop `ZWE1DS` address space(s).
 
 **Symptom:**
-Check the log for the message 
+Check the log for the message
 
 ```
 ZWED0115E - Unable to retrieve storage object from cluster. This is probably due to a timeout. 
@@ -198,6 +241,45 @@ The timeout value was increased to be `30000` in 1.11.0 release.  To check which
 ZWED_node_cluster_storageTimeout=30000
 ```
 where the timeout value is in milliseconds.
+
+## Error: Exception thrown when reading SAF keyring {ZWED0148E}
+
+**Symptom:**
+The error message indicates that Zowe's local certificate authority (local CA) `ZoweCert`, the certificate `jwtsecret`, or the Zowe certificate `localhost` does not exist in the Zowe keyring. ZWED0148E contains the following messages.
+
+```
+2021-01-18 10:16:33.601 <ZWED:16847011> ZWESVUSR WARN (_zsf.bootstrap,webserver.js:156) ZWED0148E - Exception thrown when reading SAF keyring, e= TypeError: R_datalib call failed: function code: 01, SAF rc: 8, RACF rc: 8, RACF rsn: 44
+at Object.getPemEncodedData (/software/zowev15/1.15.0/components/app-server/share/zlux-server-framework/node_modules/keyring_js/index.js:21:26)
+```
+
+**Solution:**
+
+Zowe's local CA certificate has its default name `ZoweCert`, and the Zowe Desktop hardcodes this certificate in the configuration scripts.
+
+If you are using your own trusted CA certificate in the keyring and the name is different from the default one, this error will occur. To resolve the issue, you must match the names in the [Zowe configuration](../../user-guide/configure-certificates-keyring.md). 
+
+If you are using Zowe's local CA certificate but it still reports **ZWED0148E**, you may find the following message in the same log.
+
+```
+  "https": {
+    "ipAddresses": [
+      "0.0.0.0"
+    ],
+    "port": 8544,
+    "keys": [
+      "safkeyring:////ZWESVUSR/ring&Label A"
+    ],
+    "certificates": [
+      "safkeyring:////ZWESVUSR/ring&Label A"
+    ],
+    "certificateAuthorities": [
+      "safkeyring:////ZWESVUSR/ring&Label B",
+      "safkeyring:////ZWESVUSR/ring&Label B"
+    ]
+  },
+```
+
+In this case, you must make sure that the label names exactly match the names in TSO when looking up the keyring you own. Any difference in spaces, capitalization, or other places will cause the error.
 
 ## Warning: Problem making eureka request { Error: connect ECONNREFUSED }
 
@@ -217,7 +299,7 @@ port: 7553 }
 **Solution:**   
 You can ignore these messages. These messages are timing-related where different Eureka servers come up, try to connect to each other, and warn that the endpoint they are trying to perform a handshake with is not available.  When all of the Eurka services have started, these errors will stop being logged.  
 
-## Warning: ZWED0159W - Plugin (org.zowe.zlux.proxy.zosmf) loading failed.
+## Warning: ZWED0159W - Plugin (org.zowe.zlux.proxy.zosmf) loading failed
 
 **Symptom:**
 The Zowe started task `ZWESVSTC` log contains messages
@@ -232,20 +314,20 @@ Host & Port for proxy destination are required but were missing.
 You can ignore these messages which should not occur in 1.11 or later releases.  To check which release of Zowe you are running, see [Determining the Zowe release number](../../troubleshoot/troubleshooting.md#determining-the-zowe-release-number).
 
 ## Warning: ZWED0050W - Could not read swagger doc folder (..)
- 
+
 **Symptom:**
 The Zowe started task `ZWESVSTC` log contains messages ending
 
 ```
-ZWED0050W - Could not read swagger doc folder <ROOT_DIR>/components/app-server/share/zlux-workflow/doc/swagger
-ZWED0050W - Could not read swagger doc folder <ROOT_DIR>/components/app-server/share/zlux-app-manager/virtual-desktop/doc/swagger
-ZWED0050W - Could not read swagger doc folder <ROOT_DIR>/components/app-server/share/zlux-app-manager/bootstrap/doc/swagger
-ZWED0050W - Could not read swagger doc folder <ROOT_DIR>/components/app-server/share/zlux-server-framework/plugins/terminal-proxy/doc/swagger
-ZWED0050W - Could not read swagger doc folder <ROOT_DIR>/components/app-server/share/tn3270-ng2/doc/swagger
+ZWED0050W - Could not read swagger doc folder <RUNTIME_DIR>/components/app-server/share/zlux-workflow/doc/swagger
+ZWED0050W - Could not read swagger doc folder <RUNTIME_DIR>/components/app-server/share/zlux-app-manager/virtual-desktop/doc/swagger
+ZWED0050W - Could not read swagger doc folder <RUNTIME_DIR>/components/app-server/share/zlux-app-manager/bootstrap/doc/swagger
+ZWED0050W - Could not read swagger doc folder <RUNTIME_DIR>/components/app-server/share/zlux-server-framework/plugins/terminal-proxy/doc/swagger
+ZWED0050W - Could not read swagger doc folder <RUNTIME_DIR>/components/app-server/share/tn3270-ng2/doc/swagger
 ```
 
-**Solution:**   
-You can ignore these messages. 
+**Solution:**
+You can ignore these messages.
 
 ## Warning: ZWED0047W - Swagger file for server (...) not found
 
@@ -261,5 +343,62 @@ ZWED0047W - Swagger file for service (org.zowe.terminal.proxy:tn3270data) not fo
 ZWED0047W - Swagger file for service (org.zowe.terminal.tn3270:statediscovery) not found
 ```
 
-**Solution:**   
-You can ignore these messages. 
+**Solution:**
+You can ignore these messages.
+
+## Warning: ZWED0171W - Rejected undefined referrer for url=/login, ip=(...)
+
+**Symptom:**
+
+The following message will be shown in the appServer log when you encounter this warning.
+
+```
+ZOWE WARN (_zsf.auth,webauth.js:328) ZWED0003W - mq5xJaY71xUDA19ku5ScQbdm6bwUF1pN: Session security call authenticate failed for auth handler org.zowe.zlux.auth.safsso. Plugin response: {"success":false,"error":{"message":"ZSS 403 Forbidden"},"reason":"Unknown","apiml":true,"zss":true,"sso":false,"canChangePassword":true}
+```
+
+**Solution:**
+
+The IP address that you log in with should be the client IP address that initiates the request, but now it is the server IP address that is used in `ZOWE_IP_ADDRESS=xx.xx.xx.xx`. It means that the server contacts itself, not through the localhost.
+
+The server should contain a loopback address by adding `ZWED_node_https_ipAddresses=$ZOWE_IP_ADDRESS` in `instance.env`.
+
+## Unable to log in to the explorers when using Zowe V1.13 or V1.14
+
+**Symptom:**
+
+You installed Zowe V1.13 or V1.14. When you start the Zowe server, you see the following error message in the `appServer` log.
+
+```
+failed to process config                                           
+TypeError: config.csp.frame-ancestorsÝ0¨.split is not a function   
+```
+
+When you log in to the Zowe Desktop, you cannot open the JES, MVS, or USS Explorers. You receive the following error message: 
+
+```
+{"messages":[{"messageType":"ERROR","messageNumber":"ZWEAG708E","messageContent":"The request to the URL '/ui/v1/explorer-uss/' has failed after retrying on all known service instances. Caused by: java.net.ConnectException: EDC8128I Connection refused. (errno2=0x74940000) (Connection refused)","messageKey":"org.zowe.apiml.gateway.connectionRefused"}]} 
+```
+
+**Solution:**
+
+A new property `ZOWE_EXPLORER_FRAME_ANCESTORS` was introduced in V1.12. This property is required to be present in the `instance.env` file with some valid value. When undefined, it is treated as Boolean, which breaks the string split function. To resolve the issue, define the value for this property in the `instance.env` file. 
+
+## Warning: Zowe extensions access to ZSS security endpoints fail
+
+**Symptom:**
+
+Zowe extensions fail when accessing the ZSS APIs such as the `security-mgmt/classes/default-class/profiles` endpoint. The following error is written to the log.
+
+```
+BPXTLS failed: rc=-1, return code=163, reason code=0x0be80820
+```
+
+**Solution:**
+
+Access to the ZSS endpoints are protected. To access the ZSS endpoints, the user must have `READ` access on the `OMVSAPPL` resource in the `APPL` class.
+
+To fix this permit access, issue the following TSO command, where `userID` is the started task ID of the requesting process. The vendor documentation describes which userID to use which might be `ZWESVUSR`.  
+
+```
+PERMIT OMVSAPPL CLASS(APPL) ACCESS(READ) ID(userID)
+```

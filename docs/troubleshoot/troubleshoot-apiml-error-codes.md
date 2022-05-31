@@ -7,21 +7,21 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAM000I
 
-  %s has been started in %s seconds
+  %s started in %s seconds
 
   **Reason:**
 
-  The service has been started
+  The service started.
 
   **Action:**
 
-  No action is needed
+  No action required.
 
 ## API mediation common messages
 
 ### ZWEAO102E
 
-  Gateway not found yet, transform service cannot perform the request
+  Gateway not yet discovered. The Transform service cannot perform the request
 
   **Reason:**
 
@@ -42,6 +42,30 @@ The following error message codes may appear on logs or API responses. Use the f
   **Action:**
 
   Check that both the service and the Gateway can register with Discovery. If the services are not registering, investigate the reason why. If no cause can be determined, create an issue.
+
+### ZWEAO105W
+
+  Gateway HTTP Client per-route connection limit (maxConnectionsPerRoute) of %s has been reached for the '%s' route.
+
+  **Reason:**
+
+  Too many concurrent connection requests were made to the same route.
+
+  **Action:**
+
+  Further connections will be queued until there is room in the connection pool. You may also increase the per-route connection limit via the gateway start-up script by setting the Gateway configuration for maxConnectionsPerRoute.
+
+### ZWEAO106W
+
+  Gateway HTTP Client total connection limit (maxTotalConnections) of %s has been reached.
+
+  **Reason:**
+
+  Too many concurrent connection requests were made.
+
+  **Action:**
+
+  Further connections will be queued until there is room in the connection pool. You may also increase the total connection limit via the gateway start-up script by setting the Gateway configuration for maxTotalConnections.
 
 ### ZWEAO401E
 
@@ -75,7 +99,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  I/O error reading `META-INF/build-info.properties` or `META-INF/git.properties`
+  I/O error reading `META-INF/build-info.properties` or `META-INF/git.properties`.
 
   **Action:**
 
@@ -87,7 +111,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  Message service is requested to create message with an invalid key.
+  Message service is requested to create a message with an invalid key.
 
   **Action:**
 
@@ -143,11 +167,11 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Stop the service and set the verifySslCertificatesOfServices parameter to `true`. Then restart the service. Do not use this option in a production environment.
+  Stop the service and set the verifySslCertificatesOfServices parameter to `true`, and then restart the service. Do not use this option in a production environment.
 
 ### ZWEAM501W
 
-  Service is connecting to Discovery service using insecure HTTP protocol.
+  Service is connecting to Discovery service using the non-secure HTTP protocol.
 
   **Reason:**
 
@@ -279,15 +303,25 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAM511E
 
-  The certificate of the service accessed using URL '%s' is not trusted by the API Gateway: %s
+  There was a TLS request error accessing the URL '%s': '%s'
 
   **Reason:**
 
-  The Gateway does not trust the requested service and refuses to communicate with it. The certificate of the service is missing from the truststore of the API Mediation Layer.
+  The Gateway refuses to communicate with the requested service.
 
   **Action:**
 
-  Contact your administrator to verify API Mediation Layer truststore configuration.
+  Possible actions regarding to message content:
+  - Message: The certificate is not trusted by the API Gateway.
+  Action: Verify trust of the certificate is the issue by disabling certificate verification and retry the request.
+  - Message: Certificate does not match any of the subject alternative names.
+  Action: Verify that the hostname which the certificate is issued for matches the hostname of the service.
+  - Message: Unable to find the valid certification path to the requested target.
+  Action: Import the root CA that issued services' certificate to API Gateway truststore.
+  - Message: Verify the requested service supports TLS.
+  Action: Ensure the requested service is running with TLS enabled.
+  - Message: Review the APIML debug log for more information.
+  Action: Enable APIML debug mode and retry the request, then review the APIML log for TLS errors.
 
 ### ZWEAM600W
 
@@ -319,7 +353,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  Request failed because of an internal error.
+  The request failed because of an internal error.
 
   **Action:**
 
@@ -345,15 +379,123 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  A message could not be written to the response
+  A message could not be written to the response.
 
   **Action:**
 
   Please submit an issue with this message.
 
+### ZWEAT403E
+
+  The user is not authorized to the target resource: %s
+
+  **Reason:**
+
+  The service has accepted the authentication of the user but the user does not have access rights to the resource.
+
+  **Action:**
+
+  Contact your security administrator to give you access.
+
+### ZWEAT409E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The platform responded with unknown errno code.
+
+  **Action:**
+
+  Please submit an issue with this message.
+
+### ZWEAT410E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The specified password is incorrect.
+
+  **Action:**
+
+  Provide correct password.
+
+### ZWEAT411E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The platform returned error, specified in the error message.
+
+  **Action:**
+
+  Contact your security administrator with the message.
+
+### ZWEAT412E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The specified password is expired.
+
+  **Action:**
+
+  Contact your security administrator to reset your password.
+
+### ZWEAT413E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The new password is not valid.
+
+  **Action:**
+
+  Provide valid password.
+
+### ZWEAT414E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The user name access has been revoked.
+
+  **Action:**
+
+  Contact your security administrator to unsuspend your account.
+
+### ZWEAT415E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The user name does not exist in the system.
+
+  **Action:**
+
+  Provide correct user name.
+
+### ZWEAT416E
+
+  The platform returned error: %s
+
+  **Reason:**
+
+  The specified user name or password is invalid.
+
+  **Action:**
+
+  Provide correct user name or password.
+
 ### ZWEAT601E
 
-  z/OSMF service name not found. Set parameter apiml.security.auth.zosmfServiceId to your service ID.
+  z/OSMF service name not found. Set parameter apiml.security.auth.zosmf.serviceId to your service ID.
 
   **Reason:**
 
@@ -361,7 +503,31 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Ensure that the parameter apiml.security.auth.zosmfServiceId is correctly entered with a valid zosmf service ID.
+  Ensure that the parameter apiml.security.auth.zosmf.serviceId is correctly entered with a valid z/OSMF service ID.
+
+### ZWEAT602E
+
+  The SAF provider `endpoint` supports only the resource class 'ZOWE', but the current one is '%s'
+
+  **Reason:**
+
+  The parameter `apiml.security.authorization.provider` is set to `endpoint`
+
+  **Action:**
+
+  Change the SAF provider to another one to use this endpoint
+
+### ZWEAT603E
+
+  Endpoint `%s` is not properly configured
+
+  **Reason:**
+
+  The application cannot call the endpoint to check the SAF resource of the user
+
+  **Action:**
+
+  Verify the state of ZSS and IZS, then check if parameters `apiml.security.authorization.endpoint.*` are matching.
 
 ## Security client messages
 
@@ -407,11 +573,11 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  Authentication service is not available.
+  The Authentication service is not available.
 
   **Action:**
 
-  Make sure that authentication service is running and is accessible by the URL provided in the message.
+  Make sure that the Authentication service is running and is accessible by the URL provided in the message.
 
 ### ZWEAS105E
 
@@ -431,7 +597,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  The username or password are invalid.
+  The username or password is invalid.
 
   **Action:**
 
@@ -439,7 +605,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAS121E
 
-  Authorization header is missing, or request body is missing or invalid for URL '%s'
+  Authorization header is missing, or the request body is missing or invalid for URL '%s'
 
   **Reason:**
 
@@ -448,6 +614,18 @@ The following error message codes may appear on logs or API responses. Use the f
   **Action:**
 
   Provide valid authentication.
+
+### ZWEAS123E
+
+  Invalid token type in response from Authentication service.
+
+  **Reason:**
+
+  Could not retrieve the proper authentication token from the Authentication service response.
+
+  **Action:**
+
+  Review your APIML authentication provider configuration and ensure your Authentication service is working.
 
 ### ZWEAS130E
 
@@ -521,7 +699,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Try again with valid authorization header
+  Try again with a valid authorization header
 
 ### ZWEAS170E
 
@@ -529,7 +707,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  General exception. There are more information in the message
+  General exception. There are more pieces of information in the message
 
   **Action:**
 
@@ -565,7 +743,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  Gateway service doesn't respond.
+  Gateway service does not respond.
 
   **Action:**
 
@@ -573,15 +751,27 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAS417E
 
-  The application name wasn't found
+  The application name was not found
 
   **Reason:**
 
-  The application id provided for the generation of the PassTicket wasn't recognized by security provider
+  The application id provided for the generation of the PassTicket was not recognized by the security provider
 
   **Action:**
 
   Ensure that the security provider recognized the application id.
+
+### ZWEAS130E
+
+  Invalid token provided
+
+  **Reason:**
+
+  The JWT token is not valid
+
+  **Action:**
+
+  Provide a valid token.
 
 ### ZWEAS500E
 
@@ -589,7 +779,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  The Zaas Client configuration didn't contain the path to the trust store
+  The Zaas Client configuration does not contain the path to the trust store
 
   **Action:**
 
@@ -601,7 +791,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  The Zaas Client configuration didn't contain the path to the key store
+  The Zaas Client configuration does not contain the path to the key store
 
   **Action:**
 
@@ -639,11 +829,23 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  The Discovery Service tried to notify the Gateway about instance update, but the REST call failed. The purpose of this call is to update the Gateway caches. The Gateway might be down or a network problem occured.
+  The Discovery Service tried to notify the Gateway about an instance update, but the REST call failed. The purpose of this call is to update the Gateway caches. The Gateway might be down or a network problem occurred.
 
   **Action:**
 
-  Ensure there are no network issues and the Gateway was not restarted. If the problem reoccurs, contact Broadcom support. 
+  Ensure that there are no network issues and that the Gateway was not restarted. If the problem reoccurs, contact Broadcom support. 
+
+### ZWEAD401E
+
+  Cannot notify Gateway on '%s' about cancelled registration
+
+  **Reason:**
+
+  The Discovery Service tried to notify the Gateway about service un-registration, but the REST call failed. The purpose of this call is to update the Gateway caches. The Gateway might be down or a network problem occurred.
+
+  **Action:**
+
+  Ensure that there are no network issues and that the Gateway was not restarted. If the problem reoccurs, contact Broadcom support. 
 
 ### ZWEAD700W
 
@@ -680,7 +882,7 @@ The following error message codes may appear on logs or API responses. Use the f
   **Action:**
 
   Review the mentioned static API definition file for errors.
-  Refer to the specific log message to see what is the exact cause of the problem:
+  Refer to the specific log message to determine the exact cause of the problem:
  
   - ServiceId is not defined in the file '%s'. The instance will not be created. Make sure to specify the ServiceId.
   - The `instanceBaseUrls` parameter of %s is not defined. The instance will not be created. Make sure to specify the `InstanceBaseUrl` property.
@@ -690,7 +892,7 @@ The following error message codes may appear on logs or API responses. Use the f
   - The URL %s does not contain a port number. The instance of %s will not be created.
   - The specified URL is missing a port number. Make sure to specify a valid URL.
   - The URL %s is malformed. The instance of %s will not be created: The Specified URL is malformed. Make sure to specify a valid URL.
-  - The hostname of URL %s is unknown. The instance of %s will not be created: The specified hostname of the URL is invalid. Make sure to specify valid hostname.
+  - The hostname of URL %s is unknown. The instance of %s will not be created: The specified hostname of the URL is invalid. Make sure to specify a valid hostname.
   - Invalid protocol. The specified protocol of the URL is invalid. Make sure to specify valid protocol.
   - Additional service metadata of %s in processing file %s could not be created: %s
 
@@ -715,13 +917,25 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  Gateway Service is probably misconfigured or failed to start from another reason.
+  Gateway Service is probably mis-configured or failed to start from another reason.
 
   **Action:**
 
   Review the log of Gateway Service and its configuration.
 
 ## Gateway service messages
+
+### ZWEAG500E
+
+  Client certificate is missing in request.
+
+  **Reason:**
+
+  No client certificate is present in the HTTPS request.
+
+  **Action:**
+
+  Properly configure client to send client certificate.
 
 ### ZWEAG700E
 
@@ -733,11 +947,11 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Check that the service was successfully registered to the Discovery Service and wait for Spring Cloud to refresh the routes definitions
+  Check that the service was successfully registered to the Discovery Service and wait for Spring Cloud to refresh the routes definitions.
 
 ### ZWEAG701E
 
-  Service '%s' does not allow encoded characters used in request path: '%s'.
+  Service '%s' does not allow encoded characters in the request path: '%s'.
 
   **Reason:**
 
@@ -745,11 +959,11 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Contact the system administrator and ask to enable encoded characters in the service
+  Contact the system administrator and request enablement of encoded characters in the service.
 
 ### ZWEAG702E
 
-  Gateway does not to allow encoded slashes in request: '%s'.
+  Gateway does not allow encoded slashes in request: '%s'.
 
   **Reason:**
 
@@ -757,15 +971,15 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Contact the system administrator and ask to enable encoded slashes in the Gateway.
+  Contact the system administrator and request enablement of encoded slashes in the Gateway.
 
 ### ZWEAG704E
 
-  Configuration error '%s' when trying to read jwt secret: %s
+  Configuration error '%s' when trying to read the public and private key for signing JWT: %s
 
   **Reason:**
 
-  A problem occurred while trying to read the jwt secret key from the keystore.
+  A problem occurred while trying to read the certificate-key pair from the keystore.
 
   **Action:**
 
@@ -773,7 +987,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAG705E
 
-  Failed to load public or private key from key with alias '%s' in the keystore '%s'.
+  Failed to load public or private key from key with alias '%s' in the keystore '%s'. Gateway is shutting down.
 
   **Reason:**
 
@@ -785,7 +999,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAG706E
 
-  RequestContext not prepared for load balancing.
+  RequestContext is not prepared for load balancing.
 
   **Reason:**
 
@@ -797,27 +1011,123 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAG707E
 
-  The request to the URL '%s' has been aborted without retrying on another instance. Caused by: %s
+  The request to the URL '%s' aborted without retrying on another instance. Caused by: %s
 
   **Reason:**
 
-  Request to server instance has failed and will not be retried on another instance.
+  The request to the server instance failed and will not be retried on another instance.
 
   **Action:**
 
-  Refer to Caused by details for troubleshooting.
+  Refer to 'Caused by' details for troubleshooting.
 
 ### ZWEAG708E
 
-  The request to the URL '%s' has failed after retrying on all known service instances. Caused by: %s
+  The request to the URL '%s' failed after retrying on all known service instances. Caused by: %s
 
   **Reason:**
 
-  Request to server instance could not be executed on any known service instance.
+  Request to the server instance could not be executed on any known service instance.
 
   **Action:**
 
-  Verify status of the requested instance.
+  Verify the status of the requested instance.
+
+### ZWEAG709E
+
+  Service is not available at URL '%s'. Error returned: '%s'
+
+  **Reason:**
+
+  The service is not available.
+
+  **Action:**
+
+  Make sure that the service is running and is accessible by the URL provided in the message.
+
+### ZWEAG710E
+
+  Load balancer does not have available server for client: %s
+
+  **Reason:**
+
+  The service is not available. It might be removed by the Circuit Breaker or by requesting specific instance that is not available.
+
+  **Action:**
+
+  Try the request later, or remove the request for the specific instance.
+
+### ZWEAG711E
+
+  The principal '%s' is missing queried authorization.
+
+  **Reason:**
+
+  The principal does not have the queried access to the resource name within the resource class.
+
+  **Action:**
+
+  No action is needed.
+
+### ZWEAG712E
+
+  The URI '%s' is an invalid format
+
+  **Reason:**
+
+  The URI does not follow the format /{serviceId}/{type}/{version}/{endpoint} or /{type}/{version}/{serviceId}/{endpoint}.
+
+  **Action:**
+
+  Use a properly formatted URI.
+
+### ZWEAG713E
+
+  Configuration error when trying to establish JWT producer. Events: %s
+
+  **Reason:**
+
+  A problem occurred while trying to make sure that there is a valid JWT producer avaliable.
+
+  **Action:**
+
+  Based on the specific information in the message, verify that the key configuration is correct, or alternatively, that z/OSMF is available.
+
+### ZWEAG714E
+
+  Unknown error occurred while retrieving the used public key
+
+  **Reason:**
+
+  An unknown problem occured when retrieving the used public key. This should never occur.
+
+  **Action:**
+
+  Try again later.
+
+### ZWEAG715E
+
+  The wrong amount of keys retrieved. The amount of retrieved keys is: %s
+
+  **Reason:**
+
+  There are too many keys in the JWK set. As such, it is not possible to choose the correct one.
+
+  **Action:**
+
+  Verify the configuration of the z/OSMF to make sure that z/OSMF provides only one used key.
+
+### ZWEAG716E
+
+  The system does not know what key should be used.
+
+  **Reason:**
+
+  Typically z/OSMF is either unavailable or offline.
+
+  **Action:**
+
+  Verify that z/OSMF is available, accessible by the Gateway service, and online.
 
 ### ZWEAG100E
 
@@ -829,7 +1139,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Refer to specific authentication exception details for troubleshooting.
+  Refer to the specific authentication exception details for troubleshooting.
 
 ### ZWEAG101E
 
@@ -857,7 +1167,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAG103E
 
-  Token is expired
+  The token has expired
 
   **Reason:**
 
@@ -865,7 +1175,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Obtain new token by performing an authentication request.
+  Obtain a new token by performing an authentication request.
 
 ### ZWEAG104E
 
@@ -893,7 +1203,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAG106W
 
-  Login endpoint is running in the dummy mode. Use credentials user/user to login. Do not use this option in the production environment.
+  Login endpoint is running in dummy mode. Use credentials '%s'/'%s' to log in. Do not use this option in the production environment.
 
   **Reason:**
 
@@ -901,11 +1211,11 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Action:**
 
-  Do not use this option in the production environment.
+  Ensure that this option is not being used in a production environment.
 
 ### ZWEAG107W
 
-  Incorrect value: apiml.security.auth.provider = '%s'. Authentication provider is not set correctly. Default 'zosmf' authentication provider is used.
+  Incorrect value: apiml.security.auth.provider = '%s'. The authentication provider is not set correctly. The default 'zosmf' authentication provider is being used.
 
   **Reason:**
 
@@ -917,15 +1227,15 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAG108E
 
-  z/OSMF instance '%s' not found or incorrectly configured.
+  z/OSMF instance '%s' not found or incorrectly configured. Gateway is shutting down.
 
   **Reason:**
 
-  The Gateway could not find the z/OSMF instance from the Discovery Service.
+  The Gateway could not find the z/OSMF instance from the Discovery Service or it could not communicate with the provided z/OSMF instance.
 
   **Action:**
 
-  Ensure that the z/OSMF instance is configured correctly and that it is successfully registered to the Discovery Service.
+  Ensure that the z/OSMF instance is configured correctly and that it is successfully registered to the Discovery Service and that the API Mediation Layer can communicate with the provided z/OSMF instance. The default timeout is 5 minutes. On a slower system, add the variable APIML_SECURITY_JWTINITIALIZERTIMEOUT=... and the value in minutes into Zowe's configuration to override this value.
 
 ### ZWEAG109E
 
@@ -957,7 +1267,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  The username or password are invalid.
+  The username and/or password are invalid.
 
   **Action:**
 
@@ -965,7 +1275,7 @@ The following error message codes may appear on logs or API responses. Use the f
 
 ### ZWEAG121E
 
-  Authorization header is missing, or request body is missing or invalid for URL '%s'
+  Authorization header is missing, or the request body is missing or invalid for URL '%s'
 
   **Reason:**
 
@@ -974,6 +1284,18 @@ The following error message codes may appear on logs or API responses. Use the f
   **Action:**
 
   Provide valid authentication.
+
+### ZWEAS123E
+
+  Invalid token type in response from Authentication service.
+
+  **Reason:**
+
+  Could not retrieve the proper authentication token from the Authentication service response.
+
+  **Action:**
+
+  Review your APIML authentication provider configuration and ensure your Authentication service is working.
 
 ### ZWEAG130E
 
@@ -1079,11 +1401,11 @@ The following error message codes may appear on logs or API responses. Use the f
 
   **Reason:**
 
-  One or more containers statuses could not be retrieved.
+  The status of one or more containers could not be retrieved.
 
   **Action:**
 
-  Check the status of the message for more information and the health of Discovery Service.
+  Check the status of the message for more information and the health of the Discovery Service.
 
 ### ZWEAC700E
 
@@ -1156,10 +1478,10 @@ The following error message codes may appear on logs or API responses. Use the f
   **Action:**
 
   Refer to the specific printed message. Possible causes include:
-  - The Gateway was not found. Transform service cannot perform the request. Wait for the Gateway to be discovered.
-  - The URI ... is not valid. Ensure the service is providing a valid url.
-  - Not able to select a route for url ... of the service ... Original url is used. If this is a problem, check the routing metadata of the service.
-  - The path ... of the service URL ... is not valid. Ensure the service is providing the correct path.
+  - The Gateway was not found. The Transform service cannot perform the request. Wait for the Gateway to be discovered.
+  - The URI is not valid. Ensure the service is providing a valid URL.
+  - Not able to select a route for the URL of the specific service. The original URL is used. If necessary, check the routing metadata of the service.
+  - The path of the service URL is not valid. Ensure the service is providing the correct path.
  
 
 ### ZWEAC706E
@@ -1181,6 +1503,34 @@ The following error message codes may appear on logs or API responses. Use the f
   **Reason:**
 
   The Static API refresh could not be performed because of exception.
+
+  **Action:**
+
+  Check the specific exception for troubleshooting.
+
+### ZWEAC708E
+
+  The API base path for service %s was not retrieved. %s
+
+  **Reason:**
+
+  The API base path for service was not retrieved. An empty path will be used.
+
+  **Action:**
+
+  Refer to the specific printed message. Possible causes include:
+  - The URI is not valid. Ensure the service is providing a valid URL.
+  - Not able to select a route for the URL of the specific service. The original URL is used. If necessary, check the routing metadata of the service.
+  - The path of the service URL is not valid. Ensure the service is providing the correct path.
+ 
+
+### ZWEAC709E
+
+  Static definition generation failed, caused by exception: %s
+
+  **Reason:**
+
+  The Static definition generation could not be performed because of exception.
 
   **Action:**
 
